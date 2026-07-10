@@ -1,0 +1,6 @@
+{
+  "name": "Commission Calculator",
+  "description": "A professional commission calculator for real estate projects, enabling stakeholder tracking, tax/deduction calculations, and automated PDF summary generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
