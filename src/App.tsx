@@ -1,276 +1,574 @@
-import { useState, useEffect } from 'react';
-import { Building2, Sparkles, RefreshCw, Trash, Calculator, Plus, HardHat, FileText, Landmark } from 'lucide-react';
-import { Project, Stakeholder, DEFAULT_ROLES } from './types';
-import ProjectSetup from './components/ProjectSetup';
-import StakeholderEntry from './components/StakeholderEntry';
-import SummaryTable from './components/SummaryTable';
-import RoleManager from './components/RoleManager';
+import React, { useState, useEffect } from 'react';
+import {
+  Landmark,
+  Sparkles,
+  Trash2,
+  Calculator,
+  Building,
+  Users,
+  LayoutDashboard,
+  Coins,
+  FileText,
+  AlertCircle,
+  TrendingUp,
+  Settings,
+  HelpCircle,
+  Activity
+} from 'lucide-react';
+import { Project, Person, CommissionEntry, Payment } from './types';
+import { calculateCommission } from './utils';
+
+// Import our custom modules
+import FilterBar, { FilterState } from './components/FilterBar';
+import Dashboard from './components/Dashboard';
+import BookingsList from './components/BookingsList';
+import ProjectManager from './components/ProjectManager';
+import DirectoryManager from './components/DirectoryManager';
+import ReportsManager from './components/ReportsManager';
 
 // Key names for LocalStorage
-const LOCAL_STORAGE_PROJECT_KEY = 'real_estate_comm_project_v2';
-const LOCAL_STORAGE_STAKEHOLDERS_KEY = 'real_estate_comm_stakeholders_v2';
-const LOCAL_STORAGE_ROLES_KEY = 'real_estate_comm_roles_v2';
+const STORAGE_PROJECTS = 're_sys_projects_v4';
+const STORAGE_PROJECT_TYPES = 're_sys_project_types_v4';
+const STORAGE_PEOPLE = 're_sys_people_v4';
+const STORAGE_ENTRIES = 're_sys_entries_v4';
+const STORAGE_PAYMENT_MODES = 're_sys_payment_modes_v4';
 
-// Gorgeous, pre-populated default project dataset with Indian Context
-const SAMPLE_PROJECT: Project = {
-  name: 'Silverwood Residences - Block B',
-  totalSaleValue: 75000000, // ₹7.5 Crore
-};
+// --- GORGEOUS SAMPLE DATASETS ---
+const DEFAULT_PROJECTS: Project[] = [
+  { id: 'p1', name: 'Skyline Heights', type: 'Residential' },
+  { id: 'p2', name: 'Cyber Plaza', type: 'Commercial' },
+  { id: 'p3', name: 'Orchard Residences', type: 'Residential' },
+];
 
-const SAMPLE_STAKEHOLDERS: Stakeholder[] = [
+const DEFAULT_PROJECT_TYPES = ['Residential', 'Commercial', 'Mixed'];
+
+const DEFAULT_PEOPLE: Person[] = [
+  { id: 'pe1', name: 'Rajesh Sharma', type: 'Executive', employeeId: 'SE-1045' },
+  { id: 'pe2', name: 'Priyanka Sen', type: 'Executive', employeeId: 'SE-1082' },
+  { id: 'pe3', name: 'Apex Realtors CP', type: 'Broker', employeeId: 'RERA-MUM1024' },
+  { id: 'pe4', name: 'Blue Star Channel Partner', type: 'Broker', employeeId: 'RERA-MUM5041' },
+];
+
+const DEFAULT_PAYMENT_MODES = ['Bank Transfer', 'Cheque', 'UPI', 'Cash'];
+
+const DEFAULT_ENTRIES: CommissionEntry[] = [
   {
-    id: 'sh-sample-1',
-    name: 'Elite Realty Partners',
-    role: 'Channel Partner',
+    id: 'e1',
+    projectId: 'p1',
+    unitNo: 'A-402',
+    customerName: 'Sanjay Dutt',
+    bookingDate: '2026-07-02',
+    agreementDate: '2026-07-10',
+    propertyValue: 8000000, // ₹80 Lakhs
+    bookingAmount: 500000,
+    receivedAmount: 4000000, // 50% paid
+    personId: 'pe1', // Rajesh Sharma
     commissionType: 'percentage',
-    rateOrAmount: 2.0, // 2% of ₹7.5Cr = ₹15,00,000
-    taxDeductionRate: 5.0, // 5% Deduction
-    tdsRate: 5.0, // 5% TDS
-    hasGst: true, // 18% GST addition
-    paymentStatus: 'Partially Paid',
-    commissionCap: 1200000, // Capped at ₹12,00,000
-    milestones: [
-      { id: 'ms-std-1-sh-sample-1', name: 'On Booking', percentage: 30 },
-      { id: 'ms-std-2-sh-sample-1', name: 'On Agreement', percentage: 40 },
-      { id: 'ms-std-3-sh-sample-1', name: 'On Possession', percentage: 30 },
+    rateOrAmount: 2.0, // 2%
+    bonusIncentive: 10000,
+    commissionRule: 'Standard 2% internal executive payout',
+    hasGst: false,
+    tdsRate: 5,
+    commissionCap: 150000,
+    payments: [
+      { id: 'py1', amount: 35000, date: '2026-07-11', mode: 'Bank Transfer' }
     ],
   },
   {
-    id: 'sh-sample-2',
-    name: 'Sarah Jenkins',
-    role: 'Broker',
+    id: 'e2',
+    projectId: 'p2',
+    unitNo: 'Office-12B',
+    customerName: 'TechCorp Solutions',
+    bookingDate: '2026-06-15',
+    agreementDate: '2026-06-25',
+    propertyValue: 15000000, // ₹1.5 Cr
+    bookingAmount: 1000000,
+    receivedAmount: 15000000, // 100% paid
+    personId: 'pe3', // Apex Realtors
     commissionType: 'percentage',
-    rateOrAmount: 1.0, // 1% of ₹7.5Cr = ₹7,50,000
-    taxDeductionRate: 0.0,
-    tdsRate: 5.0, // 5% TDS
-    hasGst: false,
-    paymentStatus: 'Pending',
+    rateOrAmount: 3.0, // 3%
+    bonusIncentive: 25000,
+    commissionRule: 'Commercial channel partner premium incentive',
+    hasGst: true, // 18% GST added
+    tdsRate: 5,
+    commissionCap: 400000,
+    payments: [
+      { id: 'py2', amount: 200000, date: '2026-06-28', mode: 'Bank Transfer' },
+      { id: 'py3', amount: 200000, date: '2026-07-05', mode: 'Bank Transfer' }
+    ],
   },
   {
-    id: 'sh-sample-3',
-    name: 'Marcus Cole Consulting',
-    role: 'Consultant',
-    commissionType: 'fixed',
-    rateOrAmount: 250000, // Flat ₹2.5 Lakhs
-    taxDeductionRate: 10.0, // 10% general deduction
-    tdsRate: 10.0, // 10% professional TDS
-    hasGst: true,
-    paymentStatus: 'Paid',
-  },
-  {
-    id: 'sh-sample-4',
-    name: 'Lead Gen Agency',
-    role: 'Agent',
-    commissionType: 'fixed',
-    rateOrAmount: 75000, // Flat ₹75,000
-    taxDeductionRate: 0.0,
-    tdsRate: 5.0, // 5% TDS
+    id: 'e3',
+    projectId: 'p3',
+    unitNo: 'Villa 5',
+    customerName: 'Aishwarya Rai',
+    bookingDate: '2026-05-10',
+    agreementDate: '2026-05-20',
+    propertyValue: 25000000, // ₹2.5 Cr
+    bookingAmount: 2000000,
+    receivedAmount: 5000000, // 20% paid
+    personId: 'pe2', // Priyanka Sen
+    commissionType: 'percentage',
+    rateOrAmount: 1.5, // 1.5%
+    bonusIncentive: 0,
+    commissionRule: '1.5% executive base scale',
     hasGst: false,
-    paymentStatus: 'Pending',
+    tdsRate: 5,
+    payments: [],
   },
 ];
 
+const INITIAL_FILTERS: FilterState = {
+  projectId: 'ALL',
+  executiveId: 'ALL',
+  brokerId: 'ALL',
+  startDate: '',
+  endDate: '',
+  status: 'ALL',
+};
+
 export default function App() {
-  // --- STATE INITIALIZATION ---
-  const [project, setProject] = useState<Project>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_PROJECT_KEY);
-    return saved ? JSON.parse(saved) : SAMPLE_PROJECT;
+  // --- APPLICATION STATES ---
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'projects' | 'directory' | 'reports'>('dashboard');
+
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PROJECTS);
+    return saved ? JSON.parse(saved) : DEFAULT_PROJECTS;
   });
 
-  const [stakeholders, setStakeholders] = useState<Stakeholder[]>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_STAKEHOLDERS_KEY);
-    return saved ? JSON.parse(saved) : SAMPLE_STAKEHOLDERS;
+  const [projectTypes, setProjectTypes] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PROJECT_TYPES);
+    return saved ? JSON.parse(saved) : DEFAULT_PROJECT_TYPES;
   });
 
-  const [roles, setRoles] = useState<string[]>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_ROLES_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_ROLES;
+  const [people, setPeople] = useState<Person[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PEOPLE);
+    return saved ? JSON.parse(saved) : DEFAULT_PEOPLE;
   });
 
-  // --- LOCALSTORAGE PERSISTENCE SYNC ---
+  const [paymentModes, setPaymentModes] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_PAYMENT_MODES);
+    return saved ? JSON.parse(saved) : DEFAULT_PAYMENT_MODES;
+  });
+
+  const [entries, setEntries] = useState<CommissionEntry[]>(() => {
+    const saved = localStorage.getItem(STORAGE_ENTRIES);
+    return saved ? JSON.parse(saved) : DEFAULT_ENTRIES;
+  });
+
+  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+
+  // --- AUTOMATED SYNC TO LOCAL STORAGE ---
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_PROJECT_KEY, JSON.stringify(project));
-  }, [project]);
+    localStorage.setItem(STORAGE_PROJECTS, JSON.stringify(projects));
+  }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_STAKEHOLDERS_KEY, JSON.stringify(stakeholders));
-  }, [stakeholders]);
+    localStorage.setItem(STORAGE_PROJECT_TYPES, JSON.stringify(projectTypes));
+  }, [projectTypes]);
 
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_ROLES_KEY, JSON.stringify(roles));
-  }, [roles]);
+    localStorage.setItem(STORAGE_PEOPLE, JSON.stringify(people));
+  }, [people]);
 
-  // --- STAKEHOLDER MUTATIONS ---
-  const handleAddStakeholder = () => {
-    const newSh: Stakeholder = {
-      id: `sh-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      name: '',
-      role: roles[0] || 'Broker',
-      commissionType: 'percentage',
-      rateOrAmount: 1.0,
-      taxDeductionRate: 0.0,
-      tdsRate: 5.0, // 5% standard default
-      hasGst: false,
-      paymentStatus: 'Pending',
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PAYMENT_MODES, JSON.stringify(paymentModes));
+  }, [paymentModes]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_ENTRIES, JSON.stringify(entries));
+  }, [entries]);
+
+  // --- MUTATION HANDLERS ---
+  
+  // Projects handlers
+  const handleAddProject = (p: Omit<Project, 'id'>) => {
+    const newProj: Project = {
+      ...p,
+      id: `p-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     };
-    setStakeholders([...stakeholders, newSh]);
+    setProjects([...projects, newProj]);
   };
 
-  const handleRemoveStakeholder = (id: string) => {
-    setStakeholders(stakeholders.filter((sh) => sh.id !== id));
+  const handleUpdateProject = (updated: Project) => {
+    setProjects(projects.map((p) => (p.id === updated.id ? updated : p)));
   };
 
-  const handleUpdateStakeholder = (id: string, updated: Partial<Stakeholder>) => {
-    setStakeholders(
-      stakeholders.map((sh) => {
-        if (sh.id === id) {
-          return { ...sh, ...updated };
+  const handleDeleteProject = (id: string) => {
+    setProjects(projects.filter((p) => p.id !== id));
+    // clean filters if deleted
+    if (filters.projectId === id) {
+      setFilters({ ...filters, projectId: 'ALL' });
+    }
+  };
+
+  const handleAddProjectType = (newType: string) => {
+    setProjectTypes([...projectTypes, newType]);
+  };
+
+  const handleDeleteProjectType = (typeToRemove: string) => {
+    setProjectTypes(projectTypes.filter((t) => t !== typeToRemove));
+  };
+
+  // People Directory handlers
+  const handleAddPerson = (p: Omit<Person, 'id'>) => {
+    const newPerson: Person = {
+      ...p,
+      id: `pe-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    };
+    setPeople([...people, newPerson]);
+  };
+
+  const handleUpdatePerson = (updated: Person) => {
+    setPeople(people.map((p) => (p.id === updated.id ? updated : p)));
+  };
+
+  const handleDeletePerson = (id: string) => {
+    setPeople(people.filter((p) => p.id !== id));
+    // clean filters if deleted
+    if (filters.executiveId === id) {
+      setFilters({ ...filters, executiveId: 'ALL' });
+    }
+    if (filters.brokerId === id) {
+      setFilters({ ...filters, brokerId: 'ALL' });
+    }
+  };
+
+  // Payment Modes handlers
+  const handleAddPaymentMode = (mode: string) => {
+    setPaymentModes([...paymentModes, mode]);
+  };
+
+  const handleDeletePaymentMode = (modeToRemove: string) => {
+    setPaymentModes(paymentModes.filter((m) => m !== modeToRemove));
+  };
+
+  // Commission Entries / Bookings handlers
+  const handleAddEntry = (e: Omit<CommissionEntry, 'id'>) => {
+    const newEntry: CommissionEntry = {
+      ...e,
+      id: `e-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    };
+    setEntries([newEntry, ...entries]);
+  };
+
+  const handleDeleteEntry = (id: string) => {
+    setEntries(entries.filter((e) => e.id !== id));
+  };
+
+  const handleAddPayment = (entryId: string, pay: Omit<Payment, 'id'>) => {
+    const newPayment: Payment = {
+      ...pay,
+      id: `py-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    };
+
+    setEntries(
+      entries.map((entry) => {
+        if (entry.id === entryId) {
+          const payments = entry.payments ? [...entry.payments, newPayment] : [newPayment];
+          return {
+            ...entry,
+            payments,
+          };
         }
-        return sh;
+        return entry;
       })
     );
   };
 
-  // --- ROLE MANAGER MUTATIONS ---
-  const handleAddRole = (newRole: string) => {
-    setRoles([...roles, newRole]);
+  const handleDeletePayment = (entryId: string, paymentId: string) => {
+    setEntries(
+      entries.map((entry) => {
+        if (entry.id === entryId) {
+          const payments = entry.payments ? entry.payments.filter((p) => p.id !== paymentId) : [];
+          return {
+            ...entry,
+            payments,
+          };
+        }
+        return entry;
+      })
+    );
   };
 
-  const handleRemoveRole = (roleToRemove: string) => {
-    // Prevent removing roles that are currently assigned to active stakeholders
-    const isAssigned = stakeholders.some((sh) => sh.role === roleToRemove);
-    if (isAssigned) {
-      alert(`Cannot remove "${roleToRemove}" because it is currently assigned to one or more active stakeholders.`);
-      return;
-    }
-    setRoles(roles.filter((r) => r !== roleToRemove));
-  };
-
-  const handleResetRoles = () => {
-    setRoles(DEFAULT_ROLES);
-  };
-
-  // --- WORKSPACE ACTIONS ---
-  const handleLoadSampleData = () => {
-    if (window.confirm('Are you sure you want to restore the sample project and stakeholders? This will replace your current entries.')) {
-      setProject(SAMPLE_PROJECT);
-      setStakeholders(SAMPLE_STAKEHOLDERS);
-      setRoles(DEFAULT_ROLES);
-    }
-  };
-
-  const handleClearWorkspace = () => {
-    if (window.confirm('Are you sure you want to clear your current workspace? All stakeholder records will be removed.')) {
-      setProject({ name: '', totalSaleValue: 0 });
-      setStakeholders([]);
+  // Reset workspace to blank
+  const handleResetWorkspace = () => {
+    if (
+      confirm(
+        'Are you sure you want to completely reset your workspace? This will clear all logged projects, directories, and sales bookings.'
+      )
+    ) {
+      setProjects([]);
+      setProjectTypes(DEFAULT_PROJECT_TYPES);
+      setPeople([]);
+      setPaymentModes(DEFAULT_PAYMENT_MODES);
+      setEntries([]);
+      setFilters(INITIAL_FILTERS);
+      setActiveTab('projects');
     }
   };
+
+  // Restore sample mock dataset
+  const handleRestoreSampleData = () => {
+    if (
+      confirm(
+        'Load the pre-configured sample dataset? This will replace your current records with beautiful, comprehensive metrics for testing.'
+      )
+    ) {
+      setProjects(DEFAULT_PROJECTS);
+      setProjectTypes(DEFAULT_PROJECT_TYPES);
+      setPeople(DEFAULT_PEOPLE);
+      setPaymentModes(DEFAULT_PAYMENT_MODES);
+      setEntries(DEFAULT_ENTRIES);
+      setFilters(INITIAL_FILTERS);
+      setActiveTab('dashboard');
+    }
+  };
+
+  // --- LIVE FILTER CALCULATION ---
+  const filteredEntries = entries.filter((entry) => {
+    // 1. Project filter
+    if (filters.projectId !== 'ALL' && entry.projectId !== filters.projectId) {
+      return false;
+    }
+
+    // Find project context to get totalSaleValue helper
+    const project = projects.find((p) => p.id === entry.projectId);
+
+    // 2. Executive filter (if recipient matches)
+    if (filters.executiveId !== 'ALL' && entry.personId !== filters.executiveId) {
+      return false;
+    }
+
+    // 3. Broker filter (if recipient matches)
+    if (filters.brokerId !== 'ALL' && entry.personId !== filters.brokerId) {
+      return false;
+    }
+
+    // 4. Date Range filters (using booking date)
+    if (filters.startDate && entry.bookingDate < filters.startDate) {
+      return false;
+    }
+    if (filters.endDate && entry.bookingDate > filters.endDate) {
+      return false;
+    }
+
+    // 5. Payment Status filter
+    if (filters.status !== 'ALL') {
+      const calc = calculateCommission(entry, project?.totalSaleValue || entry.propertyValue);
+      if (calc.status !== filters.status) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   return (
-    <div id="app-root" className="min-h-screen bg-[#F8F9FA] text-gray-800 font-sans flex flex-col antialiased">
-      {/* Premium Top Navigation / Header */}
-      <header id="app-header" className="bg-white border-b border-gray-100 shadow-xs sticky top-0 z-50 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#F9FAFB] text-gray-800 font-sans flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
+      
+      {/* 1. Header / Navigation rail */}
+      <header className="bg-white border-b border-gray-100 shadow-3xs sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+          <div className="flex items-center gap-2.5">
             <div className="p-2 bg-blue-600 text-white rounded-xl shadow-xs">
               <Landmark className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-extrabold text-gray-900 text-sm tracking-tight sm:text-base">Commission Calculator</h1>
-              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Real Estate Finance Workspace</p>
+              <h1 className="font-extrabold text-gray-900 text-sm tracking-tight sm:text-base">
+                Commission Calculator
+              </h1>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-none">
+                Real Estate Sales Commission Management System
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
-              id="load-sample-btn"
-              onClick={handleLoadSampleData}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50/70 hover:bg-blue-50 rounded-lg border border-blue-100/30 transition-all cursor-pointer"
-              title="Load full pre-calculated sample data to test out"
+              onClick={handleRestoreSampleData}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50/70 hover:bg-blue-100/70 rounded-lg transition-all cursor-pointer border border-blue-100/40"
+              title="Preload active metrics"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Load Sample Data</span>
             </button>
             <button
-              id="clear-workspace-btn"
-              onClick={handleClearWorkspace}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border border-transparent cursor-pointer"
-              title="Clear all inputs and starting fresh"
+              onClick={handleResetWorkspace}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+              title="Clear all workspace inputs"
             >
-              <Trash className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Clear Workspace</span>
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset Workspace</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Workspace Stage */}
-      <main id="app-main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Intro Hero Accent */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-linear-to-r from-blue-50/50 to-indigo-50/20 border border-blue-100/40 p-4 rounded-xl">
-          <div className="space-y-1">
-            <h2 className="text-sm font-bold text-blue-900 flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-blue-600" /> Real Estate Commission Distribution Ledger
-            </h2>
-            <p className="text-xs text-blue-700 leading-relaxed">
-              Define property sale value, structure nested stakeholders (brokers, consultants, agencies), allocate percentage/fixed rules, apply withholding taxes, and export formatted PDF audits.
-            </p>
+      {/* 2. Top Accent Ribbon */}
+      <div className="bg-blue-50/30 border-b border-blue-100/20 py-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 font-medium text-blue-900">
+            <Activity className="w-3.5 h-3.5 text-blue-600" />
+            <span>Audit Level Ledger &bull; All technical terms mapped with short plain-English explanations</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-gray-500 shrink-0 font-medium bg-white px-3 py-1.5 rounded-lg shadow-2xs border border-gray-100">
+          <div className="flex items-center gap-1.5 text-gray-400 font-semibold bg-white border border-gray-100 shadow-3xs px-2.5 py-1 rounded-full text-[10px]">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Auto-Saving to Browser
+            Auto-saving to browser state
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT SIDE: Inputs and controls (7 columns on large desktop) */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Screen 1: Project Setup Card */}
-            <ProjectSetup
-              name={project.name}
-              totalSaleValue={project.totalSaleValue}
-              onNameChange={(name) => setProject({ ...project, name })}
-              onValueChange={(totalSaleValue) => setProject({ ...project, totalSaleValue })}
-            />
+      {/* 3. Primary Workspace Sub-navigation */}
+      <div className="bg-white border-b border-gray-100 shadow-3xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-1 py-2 overflow-x-auto scrollbar-none">
+            
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'dashboard'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Overview Dashboard
+            </button>
 
-            {/* Screen 2: Stakeholder Repeatable Rows */}
-            <StakeholderEntry
-              stakeholders={stakeholders}
-              roles={roles}
-              onAddStakeholder={handleAddStakeholder}
-              onRemoveStakeholder={handleRemoveStakeholder}
-              onUpdateStakeholder={handleUpdateStakeholder}
-              totalSaleValue={project.totalSaleValue}
-            />
+            <button
+              onClick={() => setActiveTab('bookings')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'bookings'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Coins className="w-4 h-4" />
+              Sales & Bookings Ledger
+            </button>
 
-            {/* Collapsible Role Customizer */}
-            <RoleManager
-              roles={roles}
-              onAddRole={handleAddRole}
-              onRemoveRole={handleRemoveRole}
-              onResetRoles={handleResetRoles}
-            />
-          </div>
+            <button
+              onClick={() => setActiveTab('projects')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'projects'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Building className="w-4 h-4" />
+              Projects Portfolio
+            </button>
 
-          {/* RIGHT SIDE: Real-time Ledger Summary & Print triggers (5 columns on large desktop) */}
-          <div className="lg:col-span-5 sticky top-24 space-y-6">
-            {/* Screen 3: Financial Summary & Export PDF */}
-            <SummaryTable project={project} stakeholders={stakeholders} />
+            <button
+              onClick={() => setActiveTab('directory')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'directory'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              People Directory
+            </button>
+
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'reports'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Financial Statements
+            </button>
+
           </div>
         </div>
+      </div>
+
+      {/* 4. Active Workspace Stage */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6">
+        
+        {/* Render Global FilterBar on Dashboard and Reports screens */}
+        {(activeTab === 'dashboard' || activeTab === 'reports') && (
+          <FilterBar
+            filters={filters}
+            onFilterChange={setFilters}
+            projects={projects}
+            people={people}
+            onResetFilters={() => setFilters(INITIAL_FILTERS)}
+          />
+        )}
+
+        {/* Tab Module Renderer */}
+        {activeTab === 'dashboard' && (
+          <Dashboard
+            entries={filteredEntries}
+            projects={projects}
+            people={people}
+          />
+        )}
+
+        {activeTab === 'bookings' && (
+          <BookingsList
+            entries={entries} // bookings list manages its own full unfiltered records but displays everything
+            projects={projects}
+            people={people}
+            paymentModes={paymentModes}
+            onAddEntry={handleAddEntry}
+            onDeleteEntry={handleDeleteEntry}
+            onAddPayment={handleAddPayment}
+            onDeletePayment={handleDeletePayment}
+            onAddPaymentMode={handleAddPaymentMode}
+            onDeletePaymentMode={handleDeletePaymentMode}
+          />
+        )}
+
+        {activeTab === 'projects' && (
+          <ProjectManager
+            projects={projects}
+            projectTypes={projectTypes}
+            onAddProject={handleAddProject}
+            onUpdateProject={handleUpdateProject}
+            onDeleteProject={handleDeleteProject}
+            onAddProjectType={handleAddProjectType}
+            onDeleteProjectType={handleDeleteProjectType}
+          />
+        )}
+
+        {activeTab === 'directory' && (
+          <DirectoryManager
+            people={people}
+            onAddPerson={handleAddPerson}
+            onUpdatePerson={handleUpdatePerson}
+            onDeletePerson={handleDeletePerson}
+          />
+        )}
+
+        {activeTab === 'reports' && (
+          <ReportsManager
+            entries={filteredEntries} // reports update live in step with our global filters
+            projects={projects}
+            people={people}
+          />
+        )}
+
       </main>
 
-      {/* Footer */}
-      <footer id="app-footer" className="bg-white border-t border-gray-100 py-6 mt-12 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400 font-medium">
+      {/* 5. Footer */}
+      <footer className="bg-white border-t border-gray-100 py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400 font-semibold">
           <div className="flex items-center gap-1.5">
             <Landmark className="w-4 h-4 text-gray-300" />
-            <span>Commission Calculator &copy; {new Date().getFullYear()}</span>
+            <span>Real Estate Sales Commission Management System &copy; {new Date().getFullYear()}</span>
           </div>
           <div className="flex gap-4">
             <span>Corporate Light Theme</span>
             <span>&bull;</span>
-            <span>PDF Export Enabled</span>
+            <span>Financial Statements Excel & PDF Audits Enabled</span>
           </div>
         </div>
       </footer>

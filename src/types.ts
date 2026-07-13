@@ -2,49 +2,62 @@ export type CommissionType = 'percentage' | 'fixed';
 
 export type PaymentStatusType = 'Pending' | 'Paid' | 'Partially Paid';
 
-export interface Milestone {
-  id: string;
-  name: string;
-  percentage: number; // Split percentage (e.g. 40 for 40%)
-}
-
-export interface Stakeholder {
-  id: string;
-  name: string;
-  role: string;
-  commissionType: CommissionType;
-  rateOrAmount: number; // Percentage (e.g., 2.5 for 2.5%) or fixed amount (e.g., 50000)
-  taxDeductionRate: number; // General deduction % (e.g., 10 for 10% deduction)
-  tdsRate: number; // TDS % (Tax Deducted at Source, e.g., 5 for 5%)
-  hasGst: boolean; // Add 18% GST on commission
-  paymentStatus: PaymentStatusType;
-  commissionCap?: number; // Optional maximum cap on commission
-  milestones?: Milestone[]; // Optional payment milestones split
-}
+export type PersonType = 'Executive' | 'Broker';
 
 export interface Project {
+  id: string;
   name: string;
-  totalSaleValue: number;
+  type: string; // Residential, Commercial, Mixed, etc.
 }
 
+export interface Person {
+  id: string;
+  name: string;
+  type: PersonType;
+  employeeId: string; // Employee ID or RERA ID
+}
+
+export interface Payment {
+  id: string;
+  amount: number;
+  date: string;
+  mode: string; // Bank Transfer, Cheque, UPI, Cash
+}
+
+export interface CommissionEntry {
+  id: string;
+  projectId: string; // Link to Project
+  unitNo: string;
+  customerName: string;
+  bookingDate: string;
+  agreementDate: string;
+  propertyValue: number;
+  bookingAmount: number;
+  receivedAmount: number;
+  
+  personId: string; // Link to Person directory
+  commissionType: CommissionType;
+  rateOrAmount: number;
+  bonusIncentive: number; // Optional Bonus amount
+  commissionRule: string; // Short condition text
+  hasGst: boolean; // Add 18% GST on commission
+  tdsRate: number; // TDS % (Tax Deducted at Source, default 5%)
+  commissionCap?: number; // Optional maximum cap on commission
+  
+  payments: Payment[]; // Multiple partial payments
+}
+
+// Financial result structure for clean, high-precision calculations
 export interface CalculationResult {
-  stakeholderId: string;
-  commissionBeforeCap: number;
-  commissionAfterCap: number; // This is the Base Commission (subject to Cap)
-  isCapped: boolean;
-  deductionAmount: number;
-  netAfterDeduction: number;
+  fullBaseCommission: number; // commission on full Property Value
+  fullBaseCommissionCapped: number; // commission on full Property Value, capped
+  eligibleCommission: number; // based on received amount proportion
+  eligibleCommissionCapped: number; // after applying cap on the proportional eligible commission
+  bonusAmount: number;
   tdsAmount: number;
   gstAmount: number;
-  netPayable: number; // Final Amount to Pay (rounded only at final display)
+  netCommission: number; // Final Net Commission = Eligible Commission Capped + Bonus + GST - TDS
+  totalPaid: number;
+  pendingAmount: number;
+  status: PaymentStatusType;
 }
-
-export const DEFAULT_ROLES = [
-  'Channel Partner',
-  'Broker',
-  'Consultant',
-  'Agent',
-  'Contractor',
-  'Internal Sales',
-  'Other'
-];

@@ -1,50 +1,79 @@
-import { Stakeholder, CalculationResult } from './types';
+import { CommissionEntry, CalculationResult } from './types';
 
 /**
- * Calculates high-precision financial breakdown for a single stakeholder.
+ * Calculates high-precision financial breakdown for a single commission entry.
  * All intermediate calculations are done with full floating-point precision,
- * and we only round to 2 decimal places at the final formatting step.
+ * and we only round to 2 decimal places at the final formatting/display step.
  */
-export function calculateStakeholderCommission(
-  stakeholder: Stakeholder,
-  totalSaleValue: number
+export function calculateCommission(
+  entry: CommissionEntry,
+  propertyValue: number
 ): CalculationResult {
-  // 1. Calculate base commission before cap
-  const commissionBeforeCap =
-    stakeholder.commissionType === 'percentage'
-      ? totalSaleValue * (stakeholder.rateOrAmount / 100)
-      : stakeholder.rateOrAmount;
+  // 1. Calculate full base commission on the entire property value
+  const fullBaseCommission =
+    entry.commissionType === 'percentage'
+      ? propertyValue * (entry.rateOrAmount / 100)
+      : entry.rateOrAmount;
 
-  // 2. Apply commission cap if specified
-  const cap = stakeholder.commissionCap;
-  const isCapped = typeof cap === 'number' && cap > 0 && commissionBeforeCap > cap;
-  const commissionAfterCap = isCapped && typeof cap === 'number' ? cap : commissionBeforeCap;
+  // 2. Apply commission cap to full base commission
+  const cap = entry.commissionCap;
+  const isCapped = typeof cap === 'number' && cap > 0 && fullBaseCommission > cap;
+  const fullBaseCommissionCapped = isCapped && typeof cap === 'number' ? cap : fullBaseCommission;
 
-  // 3. Deduction Amount
-  const deductionAmount = commissionAfterCap * (stakeholder.taxDeductionRate / 100);
+  // 3. Proportional factor based on received amount from customer
+  // Received Amount / Property Value
+  let proportionFactor = 1.0;
+  if (propertyValue > 0) {
+    proportionFactor = Math.min(1.0, Math.max(0.0, entry.receivedAmount / propertyValue));
+  } else {
+    proportionFactor = 0.0;
+  }
 
-  // 4. Net commission after deduction
-  const netAfterDeduction = commissionAfterCap - deductionAmount;
+  // 4. Proportional Eligible Commission
+  const eligibleCommission = fullBaseCommission * proportionFactor;
+  const eligibleCommissionCapped = fullBaseCommissionCapped * proportionFactor;
 
-  // 5. TDS Amount (Tax Deducted at Source)
-  const tdsAmount = netAfterDeduction * (stakeholder.tdsRate / 100);
+  // 5. Bonus Amount
+  const bonusAmount = entry.bonusIncentive || 0;
 
-  // 6. GST Amount (if 18% GST checkbox is checked)
-  const gstAmount = stakeholder.hasGst ? netAfterDeduction * 0.18 : 0;
+  // 6. TDS Deduction (calculated on eligible commission)
+  const tdsAmount = eligibleCommissionCapped * (entry.tdsRate / 100);
 
-  // 7. Final Net Payable
-  const netPayable = netAfterDeduction - tdsAmount + gstAmount;
+  // 7. GST Amount (18% of eligible commission if enabled)
+  const gstAmount = entry.hasGst ? eligibleCommissionCapped * 0.18 : 0;
+
+  // 8. Net Commission
+  // Net Commission = Eligible Commission + Bonus/Incentive + GST - TDS
+  const netCommission = eligibleCommissionCapped + bonusAmount + gstAmount - tdsAmount;
+
+  // 9. Total Paid Amount from partial payments list
+  const totalPaid = entry.payments ? entry.payments.reduce((sum, p) => sum + p.amount, 0) : 0;
+
+  // 10. Pending Amount
+  const pendingAmount = netCommission - totalPaid;
+
+  // 11. Auto-derive Payment Status
+  let status: 'Pending' | 'Paid' | 'Partially Paid' = 'Pending';
+  if (totalPaid > 0) {
+    if (pendingAmount <= 0.01) {
+      status = 'Paid';
+    } else {
+      status = 'Partially Paid';
+    }
+  }
 
   return {
-    stakeholderId: stakeholder.id,
-    commissionBeforeCap: Math.max(0, commissionBeforeCap),
-    commissionAfterCap: Math.max(0, commissionAfterCap),
-    isCapped,
-    deductionAmount: Math.max(0, deductionAmount),
-    netAfterDeduction: Math.max(0, netAfterDeduction),
+    fullBaseCommission: Math.max(0, fullBaseCommission),
+    fullBaseCommissionCapped: Math.max(0, fullBaseCommissionCapped),
+    eligibleCommission: Math.max(0, eligibleCommission),
+    eligibleCommissionCapped: Math.max(0, eligibleCommissionCapped),
+    bonusAmount: Math.max(0, bonusAmount),
     tdsAmount: Math.max(0, tdsAmount),
     gstAmount: Math.max(0, gstAmount),
-    netPayable: Math.max(0, netPayable),
+    netCommission: Math.max(0, netCommission),
+    totalPaid: Math.max(0, totalPaid),
+    pendingAmount: Math.max(0, pendingAmount),
+    status,
   };
 }
 
@@ -72,57 +101,51 @@ export function formatPercent(value: number): string {
 }
 
 /**
- * Helper to validate a stakeholder's inputs.
- * Returns an object with error messages.
+ * Helper to validate a commission entry's inputs.
  */
-export function validateStakeholder(stakeholder: Stakeholder): {
-  name?: string;
+export function validateEntry(entry: CommissionEntry, propertyValue: number): {
+  projectId?: string;
+  unitNo?: string;
+  customerName?: string;
+  receivedAmount?: string;
   rateOrAmount?: string;
-  taxDeductionRate?: string;
   tdsRate?: string;
   commissionCap?: string;
-  milestones?: string;
 } {
   const errors: {
-    name?: string;
+    projectId?: string;
+    unitNo?: string;
+    customerName?: string;
+    receivedAmount?: string;
     rateOrAmount?: string;
-    taxDeductionRate?: string;
     tdsRate?: string;
     commissionCap?: string;
-    milestones?: string;
   } = {};
 
-  if (!stakeholder.name.trim()) {
-    errors.name = 'Name is required';
+  if (!entry.projectId) {
+    errors.projectId = 'Project is required';
   }
-
-  if (stakeholder.rateOrAmount < 0) {
+  if (!entry.unitNo.trim()) {
+    errors.unitNo = 'Unit Number is required';
+  }
+  if (!entry.customerName.trim()) {
+    errors.customerName = 'Customer Name is required';
+  }
+  if (entry.receivedAmount < 0) {
+    errors.receivedAmount = 'Received amount cannot be negative';
+  } else if (entry.receivedAmount > propertyValue) {
+    errors.receivedAmount = 'Received amount cannot exceed Property Value';
+  }
+  if (entry.rateOrAmount < 0) {
     errors.rateOrAmount = 'Rate or amount cannot be negative';
-  } else if (stakeholder.commissionType === 'percentage' && stakeholder.rateOrAmount > 100) {
-    errors.rateOrAmount = 'Percentage cannot exceed 100%';
+  } else if (entry.commissionType === 'percentage' && entry.rateOrAmount > 100) {
+    errors.rateOrAmount = 'Percentage rate cannot exceed 100%';
   }
-
-  if (stakeholder.taxDeductionRate < 0) {
-    errors.taxDeductionRate = 'Deduction % cannot be negative';
-  } else if (stakeholder.taxDeductionRate > 100) {
-    errors.taxDeductionRate = 'Deduction % cannot exceed 100%';
+  if (entry.tdsRate < 0 || entry.tdsRate > 100) {
+    errors.tdsRate = 'TDS must be between 0% and 100%';
   }
-
-  if (stakeholder.tdsRate < 0) {
-    errors.tdsRate = 'TDS % cannot be negative';
-  } else if (stakeholder.tdsRate > 100) {
-    errors.tdsRate = 'TDS % cannot exceed 100%';
-  }
-
-  if (stakeholder.commissionCap !== undefined && stakeholder.commissionCap < 0) {
-    errors.commissionCap = 'Cap cannot be negative';
-  }
-
-  if (stakeholder.milestones && stakeholder.milestones.length > 0) {
-    const totalPct = stakeholder.milestones.reduce((acc, m) => acc + m.percentage, 0);
-    if (Math.abs(totalPct - 100) > 0.01) {
-      errors.milestones = `Milestone splits must add up to exactly 100% (currently ${totalPct}%)`;
-    }
+  if (entry.commissionCap !== undefined && entry.commissionCap < 0) {
+    errors.commissionCap = 'Commission cap cannot be negative';
   }
 
   return errors;
