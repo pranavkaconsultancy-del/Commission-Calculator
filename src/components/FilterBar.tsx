@@ -1,6 +1,6 @@
 import React from 'react';
 import { Project, Person, PaymentStatusType } from '../types';
-import { Filter, RotateCcw, Calendar, Building, Users, CreditCard } from 'lucide-react';
+import { Filter, RotateCcw, Calendar, Building, Users, CreditCard, Layers } from 'lucide-react';
 
 export interface FilterState {
   projectId: string;
@@ -9,6 +9,7 @@ export interface FilterState {
   startDate: string;
   endDate: string;
   status: string; // 'ALL' or PaymentStatusType
+  category?: string; // Commission Category
 }
 
 interface FilterBarProps {
@@ -26,8 +27,19 @@ export default function FilterBar({
   people,
   onResetFilters,
 }: FilterBarProps) {
-  const executives = people.filter((p) => p.type === 'Executive');
-  const brokers = people.filter((p) => p.type === 'Broker');
+  // Map internal executives (Executive or Sales Executive)
+  const executives = people.filter((p) => p.type === 'Executive' || p.type === 'Sales Executive');
+  
+  // Map external stakeholders (everything else)
+  const externalPartners = people.filter((p) => p.type !== 'Executive' && p.type !== 'Sales Executive');
+
+  const categories = [
+    'Booking Commission',
+    'Referral Commission',
+    'Channel Partner Commission',
+    'Broker Commission',
+    'Incentive Payout'
+  ];
 
   const handleChange = (field: keyof FilterState, value: string) => {
     onFilterChange({
@@ -42,7 +54,7 @@ export default function FilterBar({
         <div className="flex items-center gap-2 text-gray-800 font-bold text-sm">
           <Filter className="w-4 h-4 text-blue-600" />
           <span>Filter Commission Records</span>
-          <span className="text-xs text-gray-400 font-normal">
+          <span className="text-xs text-gray-400 font-normal hidden sm:inline">
             (All statistics, charts, and reports on screen update live)
           </span>
         </div>
@@ -55,16 +67,16 @@ export default function FilterBar({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
         {/* Project Filter */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <Building className="w-3 h-3" /> Project
+            <Building className="w-3 h-3 text-blue-600" /> Project
           </label>
           <select
             value={filters.projectId}
             onChange={(e) => handleChange('projectId', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer"
+            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer animate-in fade-in duration-100"
           >
             <option value="ALL">All Projects</option>
             {projects.map((p) => (
@@ -78,12 +90,12 @@ export default function FilterBar({
         {/* Sales Executive Filter */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <Users className="w-3 h-3" /> Sales Executive
+            <Users className="w-3 h-3 text-blue-600" /> Executive / Agent
           </label>
           <select
             value={filters.executiveId}
             onChange={(e) => handleChange('executiveId', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer"
+            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer animate-in fade-in duration-100"
           >
             <option value="ALL">All Executives</option>
             {executives.map((e) => (
@@ -97,17 +109,36 @@ export default function FilterBar({
         {/* Broker / CP Filter */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <Users className="w-3 h-3" /> Broker / Channel Partner
+            <Users className="w-3 h-3 text-blue-600" /> Partner / Broker
           </label>
           <select
             value={filters.brokerId}
             onChange={(e) => handleChange('brokerId', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer"
+            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer animate-in fade-in duration-100"
           >
-            <option value="ALL">All Brokers / CPs</option>
-            {brokers.map((b) => (
+            <option value="ALL">All Partners</option>
+            {externalPartners.map((b) => (
               <option key={b.id} value={b.id}>
-                {b.name} {b.employeeId ? `(${b.employeeId})` : ''}
+                [{b.type}] {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* NEW: Commission Category Filter */}
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+            <Layers className="w-3 h-3 text-blue-600" /> Category
+          </label>
+          <select
+            value={filters.category || 'ALL'}
+            onChange={(e) => handleChange('category', e.target.value)}
+            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer animate-in fade-in duration-100"
+          >
+            <option value="ALL">All Categories</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
               </option>
             ))}
           </select>
@@ -116,21 +147,21 @@ export default function FilterBar({
         {/* Date Range Filters */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3 h-3" /> Booking Date Range
+            <Calendar className="w-3 h-3 text-blue-600" /> Date Range
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) => handleChange('startDate', e.target.value)}
-              className="w-full px-2 py-1.5 text-[11px] rounded-lg border border-gray-200 focus:outline-hidden bg-gray-50 text-gray-800 font-medium cursor-pointer"
+              className="w-full px-1.5 py-1.5 text-[10px] rounded-lg border border-gray-200 focus:outline-hidden bg-gray-50 text-gray-800 font-bold cursor-pointer"
               title="Start Date"
             />
             <input
               type="date"
               value={filters.endDate}
               onChange={(e) => handleChange('endDate', e.target.value)}
-              className="w-full px-2 py-1.5 text-[11px] rounded-lg border border-gray-200 focus:outline-hidden bg-gray-50 text-gray-800 font-medium cursor-pointer"
+              className="w-full px-1.5 py-1.5 text-[10px] rounded-lg border border-gray-200 focus:outline-hidden bg-gray-50 text-gray-800 font-bold cursor-pointer"
               title="End Date"
             />
           </div>
@@ -139,12 +170,12 @@ export default function FilterBar({
         {/* Payout Status Filter */}
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <CreditCard className="w-3 h-3" /> Payout Status
+            <CreditCard className="w-3 h-3 text-blue-600" /> Payout Status
           </label>
           <select
             value={filters.status}
             onChange={(e) => handleChange('status', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer"
+            className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 bg-gray-50 text-gray-800 font-medium cursor-pointer animate-in fade-in duration-100"
           >
             <option value="ALL">All Statuses</option>
             <option value="Pending">Pending</option>

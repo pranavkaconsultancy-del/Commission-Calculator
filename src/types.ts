@@ -2,7 +2,14 @@ export type CommissionType = 'percentage' | 'fixed';
 
 export type PaymentStatusType = 'Pending' | 'Paid' | 'Partially Paid';
 
-export type PersonType = 'Executive' | 'Broker';
+export type PersonType =
+  | 'Executive'
+  | 'Broker'
+  | 'Channel Partner'
+  | 'Sales Executive'
+  | 'Consultant'
+  | 'Agent'
+  | 'Contractor';
 
 export interface Project {
   id: string;
@@ -15,6 +22,9 @@ export interface Person {
   name: string;
   type: PersonType;
   employeeId: string; // Employee ID or RERA ID
+  email?: string;
+  phone?: string;
+  contactInfo?: string; // Backwards compatibility & catchall
 }
 
 export interface Payment {
@@ -35,14 +45,15 @@ export interface CommissionEntry {
   bookingAmount: number;
   receivedAmount: number;
   
-  personId: string; // Link to Person directory
+  personId: string; // Link to Person directory (Stakeholder ID)
   commissionType: CommissionType;
   rateOrAmount: number;
   bonusIncentive: number; // Optional Bonus amount
   commissionRule: string; // Short condition text
-  hasGst: boolean; // Add 18% GST on commission
+  hasGst: boolean; // Add GST on commission
   tdsRate: number; // TDS % (Tax Deducted at Source, default 5%)
   commissionCap?: number; // Optional maximum cap on commission
+  category?: string; // e.g. 'Booking Commission', 'Referral Commission', 'Channel Partner Commission', 'Broker Commission'
   
   payments: Payment[]; // Multiple partial payments
 }

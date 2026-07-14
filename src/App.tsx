@@ -25,6 +25,7 @@ import BookingsList from './components/BookingsList';
 import ProjectManager from './components/ProjectManager';
 import DirectoryManager from './components/DirectoryManager';
 import ReportsManager from './components/ReportsManager';
+import SettingsManager from './components/SettingsManager';
 
 // Key names for LocalStorage
 const STORAGE_PROJECTS = 're_sys_projects_v4';
@@ -129,7 +130,7 @@ const INITIAL_FILTERS: FilterState = {
 
 export default function App() {
   // --- APPLICATION STATES ---
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'projects' | 'directory' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'projects' | 'directory' | 'reports' | 'settings'>('dashboard');
 
   const [projects, setProjects] = useState<Project[]>(() => {
     const saved = localStorage.getItem(STORAGE_PROJECTS);
@@ -157,6 +158,50 @@ export default function App() {
   });
 
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+
+  // --- SETTINGS STATE WITH ROBUST SYSTEM DEFAULTS ---
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('re_sys_settings_v4');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn("Could not read stored settings, reverting to default rules", e);
+      }
+    }
+    return {
+      commissionRules: {
+        categoryDefaults: {
+          'Booking Commission': 2.0,
+          'Referral Commission': 1.5,
+          'Channel Partner Commission': 3.0,
+          'Broker Commission': 2.5,
+          'Incentive Payout': 4.0
+        },
+        stakeholderTypeDefaults: {
+          'Sales Executive': 2.0,
+          'Executive': 2.0,
+          'Broker': 3.0,
+          'Channel Partner': 3.0,
+          'Consultant': 1.5,
+          'Agent': 1.0,
+          'Contractor': 0.5
+        }
+      },
+      defaultTaxGstRate: 18,
+      defaultTaxTdsRate: 5,
+      defaultCommissionRate: 2.0,
+      roles: [
+        { role: 'Admin', description: 'Complete system config, database locks, settings override, and financial ledger read/write' },
+        { role: 'Manager', description: 'Can add/view sales entries, manage directories, run financial sheets, but cannot alter tax/withholding structures' }
+      ]
+    };
+  });
+
+  const handleSaveSettings = (newSettings: any) => {
+    setSettings(newSettings);
+    localStorage.setItem('re_sys_settings_v4', JSON.stringify(newSettings));
+  };
 
   // --- AUTOMATED SYNC TO LOCAL STORAGE ---
   useEffect(() => {
@@ -332,6 +377,14 @@ export default function App() {
       return false;
     }
 
+    // Category filter
+    if (filters.category && filters.category !== 'ALL') {
+      const entryCat = entry.category || 'Booking Commission';
+      if (entryCat !== filters.category) {
+        return false;
+      }
+    }
+
     // Find project context to get totalSaleValue helper
     const project = projects.find((p) => p.id === entry.projectId);
 
@@ -485,6 +538,18 @@ export default function App() {
               Financial Statements
             </button>
 
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'settings'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              Settings & Rule Engine
+            </button>
+
           </div>
         </div>
       </div>
@@ -542,6 +607,8 @@ export default function App() {
         {activeTab === 'directory' && (
           <DirectoryManager
             people={people}
+            entries={entries}
+            projects={projects}
             onAddPerson={handleAddPerson}
             onUpdatePerson={handleUpdatePerson}
             onDeletePerson={handleDeletePerson}
@@ -553,6 +620,13 @@ export default function App() {
             entries={filteredEntries} // reports update live in step with our global filters
             projects={projects}
             people={people}
+          />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsManager
+            settings={settings}
+            onSaveSettings={handleSaveSettings}
           />
         )}
 

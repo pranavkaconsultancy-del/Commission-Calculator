@@ -65,6 +65,7 @@ export default function BookingsList({
   const [receivedAmount, setReceivedAmount] = useState<number>(0);
   
   const [personId, setPersonId] = useState('');
+  const [category, setCategory] = useState('Booking Commission');
   const [commissionType, setCommissionType] = useState<'percentage' | 'fixed'>('percentage');
   const [rateOrAmount, setRateOrAmount] = useState<number>(0);
   const [bonusIncentive, setBonusIncentive] = useState<number>(0);
@@ -72,6 +73,10 @@ export default function BookingsList({
   const [hasGst, setHasGst] = useState(false);
   const [tdsRate, setTdsRate] = useState<number>(5);
   const [commissionCap, setCommissionCap] = useState<number | undefined>(undefined);
+
+  // Duplicate Warning states
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [forceSaveActive, setForceSaveActive] = useState(false);
 
   // Validation state
   const [errors, setErrors] = useState<any>({});
@@ -89,7 +94,7 @@ export default function BookingsList({
   const executives = people.filter((p) => p.type === 'Executive');
   const brokers = people.filter((p) => p.type === 'Broker');
 
-  // Trigger auto-initialization of select options
+  // Trigger auto-initialization of select options and Settings pre-population
   React.useEffect(() => {
     if (projects.length > 0 && !projectId) {
       setProjectId(projects[0].id);
@@ -98,6 +103,29 @@ export default function BookingsList({
       setPersonId(people[0].id);
     }
   }, [projects, people]);
+
+  // Load Settings defaults when category changes or settings is loaded
+  React.useEffect(() => {
+    // Check if we have active local storage settings we can parse
+    try {
+      const stored = localStorage.getItem('re_sys_settings_v4');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.commissionRules?.categoryDefaults?.[category] !== undefined) {
+          setRateOrAmount(parsed.commissionRules.categoryDefaults[category]);
+          setCommissionType('percentage');
+        }
+        if (parsed?.taxRules?.defaultTaxTdsRate !== undefined) {
+          setTdsRate(parsed.taxRules.defaultTaxTdsRate);
+        }
+        if (parsed?.taxRules?.defaultTaxGstEnabled !== undefined) {
+          setHasGst(parsed.taxRules.defaultTaxGstEnabled);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not read default settings to pre-populate booking form", e);
+    }
+  }, [category]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +143,7 @@ export default function BookingsList({
       bookingAmount,
       receivedAmount,
       personId,
+      category,
       commissionType,
       rateOrAmount,
       bonusIncentive,
@@ -125,15 +154,32 @@ export default function BookingsList({
       payments: [],
     };
 
+    // 1. Core fields validation
     const validationErrors = validateEntry(draftEntry as CommissionEntry, resolvedPropertyValue);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setDuplicateWarning(null); // Clear duplicate warnings if core validation fails
+      return;
+    }
+
+    // 2. Duplicate Entry Check (Project + Stakeholder + Category)
+    const isDuplicate = entries.some(
+      (entry) =>
+        entry.projectId === projectId &&
+        entry.personId === personId &&
+        (entry.category || 'Booking Commission') === category
+    );
+
+    if (isDuplicate && !forceSaveActive) {
+      setDuplicateWarning(
+        "Warning: A similar commission calculation already exists for this Project, Stakeholder, and Category. Duplicate entries can lead to double-payout errors."
+      );
       return;
     }
 
     onAddEntry(draftEntry);
     
-    // Reset Form
+    // Reset Form & warnings
     setUnitNo('');
     setPropertyValue(0);
     setCustomerName('');
@@ -148,6 +194,8 @@ export default function BookingsList({
     setTdsRate(5);
     setCommissionCap(undefined);
     setErrors({});
+    setDuplicateWarning(null);
+    setForceSaveActive(false);
     setShowForm(false);
   };
 
@@ -328,6 +376,7 @@ export default function BookingsList({
                       </option>
                     ))}
                   </select>
+                  {errors.projectId && <p className="text-[10px] text-red-500 font-bold">{errors.projectId}</p>}
                 </div>
 
                 {/* Unit Number */}
@@ -339,7 +388,7 @@ export default function BookingsList({
                     value={unitNo}
                     onChange={(e) => setUnitNo(e.target.value)}
                     className={`w-full px-3 py-2 text-xs rounded-lg border focus:outline-hidden focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
-                      errors.unitNo ? 'border-red-300' : 'border-gray-200'
+                      errors.unitNo ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
                     }`}
                   />
                   {errors.unitNo && <p className="text-[10px] text-red-500 font-bold">{errors.unitNo}</p>}
@@ -354,7 +403,7 @@ export default function BookingsList({
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     className={`w-full px-3 py-2 text-xs rounded-lg border focus:outline-hidden focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
-                      errors.customerName ? 'border-red-300' : 'border-gray-200'
+                      errors.customerName ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
                     }`}
                   />
                   {errors.customerName && <p className="text-[10px] text-red-500 font-bold">{errors.customerName}</p>}
@@ -408,9 +457,15 @@ export default function BookingsList({
                     placeholder="e.g., 7500000"
                     value={propertyValue || ''}
                     onChange={(e) => setPropertyValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium"
+                    className={`w-full px-3 py-2 text-xs rounded-lg border focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
+                      errors.propertyValue ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
+                    }`}
                   />
-                  <p className="text-[9px] text-gray-400 font-semibold italic">* Total contract cost of property unit</p>
+                  {errors.propertyValue ? (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.propertyValue}</p>
+                  ) : (
+                    <p className="text-[9px] text-gray-400 font-semibold italic">* Total contract cost of property unit</p>
+                  )}
                 </div>
 
                 {/* Booking Amount */}
@@ -422,9 +477,15 @@ export default function BookingsList({
                     placeholder="e.g., 500000"
                     value={bookingAmount || ''}
                     onChange={(e) => setBookingAmount(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium"
+                    className={`w-full px-3 py-2 text-xs rounded-lg border focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
+                      errors.bookingAmount ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
+                    }`}
                   />
-                  <p className="text-[9px] text-gray-400 font-semibold italic">* Paid initially to initiate purchase</p>
+                  {errors.bookingAmount ? (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.bookingAmount}</p>
+                  ) : (
+                    <p className="text-[9px] text-gray-400 font-semibold italic">* Paid initially to initiate purchase</p>
+                  )}
                 </div>
 
                 {/* Received Amount */}
@@ -438,7 +499,7 @@ export default function BookingsList({
                     value={receivedAmount || ''}
                     onChange={(e) => setReceivedAmount(Number(e.target.value))}
                     className={`w-full px-3 py-2 text-xs rounded-lg border focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
-                      errors.receivedAmount ? 'border-red-300' : 'border-gray-200'
+                      errors.receivedAmount ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
                     }`}
                   />
                   {errors.receivedAmount ? (
@@ -457,21 +518,41 @@ export default function BookingsList({
               <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block border-l-2 border-blue-500 pl-1.5">
                 3. Commission & Payout Setup
               </span>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 {/* Recipient Stakeholder select */}
                 <div className="space-y-1 md:col-span-2">
                   <label className="text-[10px] font-bold text-gray-500 block">Select Payee (Stakeholder)</label>
                   <select
                     value={personId}
                     onChange={(e) => setPersonId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium cursor-pointer"
+                    className={`w-full px-3 py-2 text-xs rounded-lg border focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium cursor-pointer ${
+                      errors.personId ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
+                    }`}
                   >
+                    <option value="">-- Choose Stakeholder --</option>
                     {people.map((p) => (
                       <option key={p.id} value={p.id}>
-                        [{p.type === 'Executive' ? 'Sales Executive' : 'Broker / CP'}] {p.name}{' '}
+                        [{p.type === 'Executive' ? 'Sales Executive' : p.type}] {p.name}{' '}
                         {p.employeeId ? `(${p.employeeId})` : ''}
                       </option>
                     ))}
+                  </select>
+                  {errors.personId && <p className="text-[10px] text-red-500 font-bold">{errors.personId}</p>}
+                </div>
+
+                {/* NEW: Commission Category selection */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-500 block">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium cursor-pointer"
+                  >
+                    <option value="Booking Commission">Booking Commission</option>
+                    <option value="Referral Commission">Referral Commission</option>
+                    <option value="Channel Partner Commission">Channel Partner Commission</option>
+                    <option value="Broker Commission">Broker Commission</option>
+                    <option value="Incentive Payout">Incentive Payout</option>
                   </select>
                 </div>
 
@@ -504,7 +585,7 @@ export default function BookingsList({
                     value={rateOrAmount || ''}
                     onChange={(e) => setRateOrAmount(Number(e.target.value))}
                     className={`w-full px-3 py-2 text-xs rounded-lg border focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
-                      errors.rateOrAmount ? 'border-red-300' : 'border-gray-200'
+                      errors.rateOrAmount ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
                     }`}
                   />
                   {errors.rateOrAmount && <p className="text-[10px] text-red-500 font-bold">{errors.rateOrAmount}</p>}
@@ -521,9 +602,15 @@ export default function BookingsList({
                     placeholder="e.g., 15000"
                     value={bonusIncentive || ''}
                     onChange={(e) => setBonusIncentive(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium"
+                    className={`w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
+                      errors.bonusIncentive ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
+                    }`}
                   />
-                  <p className="text-[9px] text-gray-400 font-semibold italic">* Flat cash reward paid on top of base</p>
+                  {errors.bonusIncentive ? (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.bonusIncentive}</p>
+                  ) : (
+                    <p className="text-[9px] text-gray-400 font-semibold italic">* Flat cash reward paid on top of base</p>
+                  )}
                 </div>
 
                 {/* TDS Deduction Rate */}
@@ -537,7 +624,7 @@ export default function BookingsList({
                     value={tdsRate}
                     onChange={(e) => setTdsRate(Number(e.target.value))}
                     className={`w-full px-3 py-2 text-xs rounded-lg border focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
-                      errors.tdsRate ? 'border-red-300' : 'border-gray-200'
+                      errors.tdsRate ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
                     }`}
                   />
                   {errors.tdsRate ? (
@@ -556,9 +643,15 @@ export default function BookingsList({
                     placeholder="e.g., 150000"
                     value={commissionCap || ''}
                     onChange={(e) => setCommissionCap(e.target.value ? Number(e.target.value) : undefined)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium"
+                    className={`w-full px-3 py-2 text-xs rounded-lg border border-gray-200 focus:ring-1 focus:ring-blue-500 bg-gray-50 text-gray-800 font-medium ${
+                      errors.commissionCap ? 'border-red-300 shadow-2xs shadow-red-100' : 'border-gray-200'
+                    }`}
                   />
-                  <p className="text-[9px] text-gray-400 font-semibold italic">* Hard ceiling limit on full base payout</p>
+                  {errors.commissionCap ? (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.commissionCap}</p>
+                  ) : (
+                    <p className="text-[9px] text-gray-400 font-semibold italic">* Hard ceiling limit on full base payout</p>
+                  )}
                 </div>
               </div>
 
@@ -590,6 +683,46 @@ export default function BookingsList({
               </div>
             </div>
 
+            {/* Duplicate Warnings container */}
+            {duplicateWarning && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h5 className="font-bold text-amber-800 text-[11px] uppercase tracking-wide">Duplicate Calculations Warning</h5>
+                    <p className="text-[10px] text-amber-700 leading-relaxed">{duplicateWarning}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDuplicateWarning(null);
+                      setForceSaveActive(false);
+                    }}
+                    className="px-2.5 py-1 text-[10px] font-bold text-gray-500 hover:text-gray-700 bg-white border border-gray-250 rounded-md transition-all cursor-pointer"
+                  >
+                    Cancel Action
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForceSaveActive(true);
+                      // Trigger re-submit with force-save bypassed
+                      setTimeout(() => {
+                        const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+                        const btn = document.getElementById('submit-booking-btn');
+                        if (btn) btn.click();
+                      }, 50);
+                    }}
+                    className="px-2.5 py-1 text-[10px] font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-md shadow-xs transition-all cursor-pointer"
+                  >
+                    Force Save Entry
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="flex justify-end gap-3 pt-3 border-t border-gray-50">
               <button
@@ -601,6 +734,7 @@ export default function BookingsList({
               </button>
               <button
                 type="submit"
+                id="submit-booking-btn"
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-lg shadow-sm cursor-pointer transition-colors"
               >
                 Register Booking Ledger

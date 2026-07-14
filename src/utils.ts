@@ -107,45 +107,87 @@ export function validateEntry(entry: CommissionEntry, propertyValue: number): {
   projectId?: string;
   unitNo?: string;
   customerName?: string;
+  propertyValue?: string;
   receivedAmount?: string;
+  personId?: string;
   rateOrAmount?: string;
   tdsRate?: string;
   commissionCap?: string;
+  bookingAmount?: string;
+  bonusIncentive?: string;
 } {
   const errors: {
     projectId?: string;
     unitNo?: string;
     customerName?: string;
+    propertyValue?: string;
     receivedAmount?: string;
+    personId?: string;
     rateOrAmount?: string;
     tdsRate?: string;
     commissionCap?: string;
+    bookingAmount?: string;
+    bonusIncentive?: string;
   } = {};
 
   if (!entry.projectId) {
-    errors.projectId = 'Project is required';
+    errors.projectId = 'This field is required';
   }
-  if (!entry.unitNo.trim()) {
-    errors.unitNo = 'Unit Number is required';
+  if (!entry.unitNo || !entry.unitNo.trim()) {
+    errors.unitNo = 'This field is required';
   }
-  if (!entry.customerName.trim()) {
-    errors.customerName = 'Customer Name is required';
+  if (!entry.customerName || !entry.customerName.trim()) {
+    errors.customerName = 'This field is required';
   }
+
+  // Required Field: Stakeholder Name (personId)
+  if (!entry.personId) {
+    errors.personId = 'This field is required';
+  }
+
+  // Required Field: Base Amount (propertyValue)
+  if (propertyValue === undefined || propertyValue === null || isNaN(propertyValue) || propertyValue === 0) {
+    errors.propertyValue = 'This field is required';
+  } else if (propertyValue < 0) {
+    errors.propertyValue = 'Value must be zero or positive';
+  }
+
+  // Required Field: Commission Rate or Fixed Amount
+  if (entry.rateOrAmount === undefined || entry.rateOrAmount === null || isNaN(entry.rateOrAmount) || entry.rateOrAmount === 0) {
+    errors.rateOrAmount = 'This field is required';
+  } else if (entry.rateOrAmount < 0) {
+    errors.rateOrAmount = 'Value must be zero or positive';
+  } else if (entry.commissionType === 'percentage' && (entry.rateOrAmount < 0 || entry.rateOrAmount > 100)) {
+    errors.rateOrAmount = 'Must be between 0% and 100%';
+  }
+
+  // Booking Amount Validation
+  if (entry.bookingAmount < 0) {
+    errors.bookingAmount = 'Value must be zero or positive';
+  }
+
+  // Received Amount Validation
   if (entry.receivedAmount < 0) {
-    errors.receivedAmount = 'Received amount cannot be negative';
+    errors.receivedAmount = 'Value must be zero or positive';
   } else if (entry.receivedAmount > propertyValue) {
     errors.receivedAmount = 'Received amount cannot exceed Property Value';
   }
-  if (entry.rateOrAmount < 0) {
-    errors.rateOrAmount = 'Rate or amount cannot be negative';
-  } else if (entry.commissionType === 'percentage' && entry.rateOrAmount > 100) {
-    errors.rateOrAmount = 'Percentage rate cannot exceed 100%';
+
+  // Bonus / Incentive Validation
+  if (entry.bonusIncentive < 0) {
+    errors.bonusIncentive = 'Value must be zero or positive';
   }
-  if (entry.tdsRate < 0 || entry.tdsRate > 100) {
-    errors.tdsRate = 'TDS must be between 0% and 100%';
+
+  // TDS Rate Validation (0-100%)
+  if (entry.tdsRate === undefined || entry.tdsRate === null || isNaN(entry.tdsRate)) {
+    errors.tdsRate = 'This field is required';
+  } else if (entry.tdsRate < 0 || entry.tdsRate > 100) {
+    errors.tdsRate = 'Must be between 0% and 100%';
   }
+
+  // Commission Cap Validation
   if (entry.commissionCap !== undefined && entry.commissionCap < 0) {
-    errors.commissionCap = 'Commission cap cannot be negative';
+    errors.commissionCap = 'Value must be zero or positive';
   }
 
   return errors;
