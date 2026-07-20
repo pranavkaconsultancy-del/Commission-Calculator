@@ -4,4 +4,118 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* SyncAI brand color mapping overrides */
+  --color-blue-50: #f1f9f8;
+  --color-blue-100: #e1f4f1;
+  --color-blue-200: #c2eaee;
+  --color-blue-300: #91dbe2;
+  --color-blue-400: #57c4cf;
+  --color-blue-500: #1a6e8e; /* Core teal-blue brand accent (#1a6e8e) */
+  --color-blue-600: #1a6e8e; /* Main button and interactive color */
+  --color-blue-700: #13536c; /* Elegant dark blue-teal hover color */
+  --color-blue-800: #113f52; 
+  --color-blue-900: #1a3a6e; /* Deep blue from the SyncAI logo */
+  --color-blue-950: #0d1e3a; /* Dark-mode background-friendly deep blue */
 }
+
+/* ==========================================
+   GLOBAL INTERACTIVE CONTRAST & ACCESSIBILITY FIXES
+   ========================================== */
+
+/* 1. Select Dropdowns & Options Contrast Fix
+   Forces native browser dropdown options to have high-contrast text and backgrounds
+   so that option text doesn't become white-on-white or dark-on-dark on different OS/browser themes. */
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important; /* Slate-900 for absolute readability in light contexts */
+}
+
+/* Explicit selector for when dark mode is enabled on the html element */
+html.dark select option,
+.dark select option,
+:root[class~="dark"] select option,
+body.dark select option {
+  background-color: #0f172a !important; /* Slate-900 dark context background */
+  color: #ffffff !important; /* Crisp white text */
+}
+
+/* 2. Form Input Autofill & Autocomplete Styling
+   Ensures that browser autocomplete doesn't cause white-on-yellow or low-contrast text. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0px 1000px #f8fafc inset !important; /* Slate-50 background */
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover, 
+html.dark input:-webkit-autofill:focus,
+html.dark input:-webkit-autofill:active,
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0f172a inset !important; /* Slate-900 background */
+}
+
+/* 3. Global Input and Dropdown Focus outline */
+input:focus-visible, 
+select:focus-visible, 
+textarea:focus-visible {
+  outline: 2px solid #1a6e8e !important; /* Brand teal-blue */
+  outline-offset: 1px !important;
+}
+
+/* 4. Button Hover, Focus and Active States Contrast Preservation
+   Guarantees button text stays perfectly readable on click and hover. */
+button {
+  transition: all 0.15s ease-in-out;
+}
+
+button:focus-visible {
+  outline: 2px solid #1a6e8e !important;
+  outline-offset: 2px !important;
+}
+
+/* Keep primary buttons readable under any active or focused state */
+button.bg-blue-500,
+button.bg-blue-600,
+button.bg-blue-700,
+button.bg-emerald-600,
+button.bg-emerald-700,
+button.bg-rose-600,
+button.bg-rose-700,
+button.bg-purple-600,
+button.bg-purple-700 {
+  color: #ffffff !important;
+}
+
+/* Keep white/light buttons readable under any active or focused state */
+button.bg-white,
+button.bg-slate-50,
+button.bg-slate-100,
+button.bg-slate-200 {
+  color: #0f172a !important;
+}
+
+html.dark button.bg-white,
+html.dark button.bg-slate-50,
+html.dark button.bg-slate-100,
+html.dark button.bg-slate-200,
+.dark button.bg-white,
+.dark button.bg-slate-50,
+.dark button.bg-slate-100,
+.dark button.bg-slate-200 {
+  color: #ffffff !important;
+}
+
+/* 5. Table Row Hover States Contrast Preservation */
+tr:hover {
+  color: inherit !important;
+}
+

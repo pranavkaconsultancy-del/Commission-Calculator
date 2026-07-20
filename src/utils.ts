@@ -1,4 +1,4 @@
-import { CommissionEntry } from './types';
+// Utility functions for commission calculations and currency formatting
 
 export interface CommissionBreakdown {
   baseCommission: number;
