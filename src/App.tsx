@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, Users, Coins, ClipboardList, ShieldAlert, Sun, Moon, Bell, Info, 
-  Database, RefreshCw, LogIn, UserCheck, Layers
+  Database, RefreshCw, LogIn, UserCheck, Layers, Search
 } from 'lucide-react';
 import { 
   Broker, Project, Property, Sale, Commission, Payment, AuditLog, AppNotification, UserRole 
@@ -291,59 +291,56 @@ export default function App() {
     }`}>
       
       {/* 1. HEADER BRANDING & ROLE CONTROL BAR */}
-      <header className={`sticky top-0 z-40 border-b px-5 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4 ${
-        darkMode ? 'bg-slate-950/80 border-slate-800 backdrop-blur-md' : 'bg-white/80 border-slate-200 backdrop-blur-md'
-      }`}>
-        {/* Brand Label */}
-        <div className="flex items-center gap-4">
-          <BrandLogo className="h-11 w-auto" darkMode={darkMode} />
-          <div className="border-l border-slate-200 dark:border-slate-800 pl-4 hidden md:block">
-            <h1 className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-              Broker Commission System
-              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ${
-                isSupabaseConfigured ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
-              }`}>
-                {isSupabaseConfigured ? 'Cloud Sync' : 'Local Fallback'}
-              </span>
-            </h1>
-            <p className="text-[9px] text-slate-400 mt-0.5 font-semibold">TDS & Payout Management Cockpit</p>
+      <header className="sticky top-0 z-40 px-6 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gradient-to-r from-[#0F1F3D] to-[#0EA5B7] border-b border-white/10 text-white shadow-md">
+        
+        {/* Left Side: Empty or compact layout back-sync */}
+        <div className="flex items-center gap-2">
+          <div className="bg-white/10 p-1 rounded-lg">
+            <Coins className="w-5 h-5 text-teal-300" />
           </div>
+          <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">
+            Commission cockpit
+          </span>
         </div>
 
-        {/* System controls */}
+        {/* Center: Search Bar with glassy/translucent design */}
+        <div className="flex-1 max-w-md mx-4 relative w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="Search brokers, properties, transactions..."
+            className="w-full pl-10 pr-4 py-2 text-xs bg-white/15 backdrop-blur-sm border border-white/25 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all rounded-xl"
+          />
+          <Search className="w-4 h-4 text-white/60 absolute left-3.5 top-2.5" />
+        </div>
+
+        {/* Right Side: Glassy system controls, notification and avatar/profile chip */}
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           {/* Refresh / Sync Button */}
           <button 
             onClick={handleSyncData}
-            className={`p-2 rounded-xl border transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${
-              darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'
-            }`}
+            className="p-2 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all"
             title="Sync Database"
           >
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-blue-500' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-teal-300' : ''}`} />
           </button>
 
-          {/* Dark Mode Switcher */}
+          {/* Dark Mode Switcher (glassy look) */}
           <button 
             onClick={() => setDarkMode(!darkMode)}
-            className={`p-2 rounded-xl border transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${
-              darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'
-            }`}
+            className="p-2 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all"
           >
-            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            {darkMode ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-white" />}
           </button>
 
           {/* Live Notification Bell */}
           <div className="relative">
             <button 
               onClick={() => setShowNotifPanel(!showNotifPanel)}
-              className={`p-2 rounded-xl border transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 relative ${
-                darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'
-              }`}
+              className="p-2 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all relative"
             >
               <Bell className="w-4 h-4" />
               {unreadNotifCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-red-600 text-white rounded-full flex items-center justify-center text-[8px] font-black border-2 border-white dark:border-slate-950 animate-pulse">
+                <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-red-600 text-white rounded-full flex items-center justify-center text-[8px] font-black border-2 border-white animate-pulse">
                   {unreadNotifCount}
                 </span>
               )}
@@ -359,29 +356,31 @@ export default function App() {
             )}
           </div>
 
-          {/* SIMULATED LOGIN ROLES SYSTEM */}
-          <div className={`flex items-center gap-2 p-1.5 rounded-xl border text-xs ${
-            darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-          }`}>
-            <span className="p-1 bg-blue-100 dark:bg-blue-950/50 rounded text-blue-600 dark:text-blue-400">
-              <UserCheck className="w-3.5 h-3.5" />
-            </span>
-            <div className="text-left hidden sm:block pr-1.5">
-              <p className="text-[9px] uppercase font-black text-slate-400">Security Scope</p>
-              <p className="font-bold text-[10px]">{userRole}</p>
+          {/* USER AVATAR / PROFILE CHIP */}
+          <div className="flex items-center gap-2 p-1 bg-white/10 hover:bg-white/15 border border-white/15 rounded-xl text-xs text-white transition-all shadow-sm">
+            <div className="w-7 h-7 bg-teal-400 text-[#0F1F3D] font-black flex items-center justify-center rounded-lg shadow-inner uppercase">
+              {userRole[0] || 'U'}
             </div>
-            <select
-              value={userRole}
-              onChange={(e) => setUserRole(e.target.value as UserRole)}
-              className={`p-1 font-bold text-[10px] rounded focus:outline-none border-none bg-transparent ${
-                darkMode ? 'text-white' : 'text-slate-800'
-              }`}
-            >
-              <option value="Super Admin" className="dark:bg-slate-800 dark:text-white">Super Admin Scope</option>
-              <option value="Admin" className="dark:bg-slate-800 dark:text-white">Admin Scope</option>
-              <option value="Accountant" className="dark:bg-slate-800 dark:text-white">Accountant Scope</option>
-              <option value="Broker" className="dark:bg-slate-800 dark:text-white">Broker (Rajesh)</option>
-            </select>
+            <div className="text-left hidden sm:block pr-1">
+              <p className="text-[7.5px] uppercase font-black tracking-wider text-teal-200">Active Scope</p>
+              <select
+                value={userRole}
+                onChange={(e) => {
+                  const role = e.target.value as UserRole;
+                  setUserRole(role);
+                  if (role === 'Super Admin') setUserEmail('admin@realty.com');
+                  else if (role === 'Admin') setUserEmail('manager@realty.com');
+                  else if (role === 'Accountant') setUserEmail('finance@realty.com');
+                  else if (role === 'Broker') setUserEmail('rajesh@broker.com');
+                }}
+                className="font-bold text-[10px] focus:outline-none border-none bg-transparent cursor-pointer text-white select-none pr-1 [&>option]:bg-[#0F1F3D] [&>option]:text-white"
+              >
+                <option value="Super Admin">Super Admin</option>
+                <option value="Admin">Admin</option>
+                <option value="Accountant">Accountant</option>
+                <option value="Broker">Broker (Rajesh)</option>
+              </select>
+            </div>
           </div>
         </div>
       </header>
@@ -389,97 +388,126 @@ export default function App() {
       {/* 2. MAIN COCKPIT VIEWPORT */}
       <div className="flex-1 flex flex-col md:flex-row">
         
-        {/* SIDE NAVIGATION BAR */}
-        <nav className={`w-full md:w-64 p-4 border-r md:min-h-screen text-xs space-y-1.5 ${
-          darkMode ? 'bg-slate-950/40 border-slate-800/80' : 'bg-white border-slate-200/80'
-        }`}>
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3.5 py-1 mb-2">Navigation Panels</p>
+        {/* SIDE NAVIGATION BAR (Always Dark Navy Blue) */}
+        <nav className="w-full md:w-64 p-4 md:min-h-screen text-xs flex flex-col justify-between bg-[#0F1F3D] text-white border-r border-[#1e3256] space-y-1.5 shrink-0">
           
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border ${
-              activeTab === 'dashboard'
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/60 hover:text-blue-800 dark:hover:text-blue-200'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 focus-visible:bg-blue-50/60 dark:focus-visible:bg-blue-950/20 focus-visible:text-blue-700 dark:focus-visible:text-blue-300'
-            }`}
-          >
-            <Layers className="w-4.5 h-4.5" /> Dashboard Overview
-          </button>
+          <div className="space-y-1.5 w-full">
+            {/* App logo/branding at top of the sidebar */}
+            <div className="px-3.5 py-4 flex flex-col gap-2 border-b border-white/10 mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-white/10 p-1.5 rounded-xl border border-white/10 shrink-0">
+                  <BrandLogo className="h-8 w-auto" darkMode={true} showText={false} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black tracking-tight text-white uppercase flex items-center gap-1">
+                    SyncAI
+                  </h2>
+                  <p className="text-[9px] font-black text-teal-400 uppercase tracking-widest">Commission Portal</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ${
+                  isSupabaseConfigured ? 'bg-teal-500/20 text-teal-300' : 'bg-amber-500/20 text-amber-300'
+                }`}>
+                  {isSupabaseConfigured ? 'Cloud Sync' : 'Local Fallback'}
+                </span>
+                <span className="text-[8px] text-white/50 font-bold">v1.2.0</span>
+              </div>
+            </div>
 
-          <button
-            onClick={() => setActiveTab('brokers')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border ${
-              activeTab === 'brokers'
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/60 hover:text-blue-800 dark:hover:text-blue-200'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 focus-visible:bg-blue-50/60 dark:focus-visible:bg-blue-950/20 focus-visible:text-blue-700 dark:focus-visible:text-blue-300'
-            }`}
-          >
-            <Users className="w-4.5 h-4.5" /> Brokers Directory
-          </button>
-
-          <button
-            onClick={() => setActiveTab('properties')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border ${
-              activeTab === 'properties'
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/60 hover:text-blue-800 dark:hover:text-blue-200'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 focus-visible:bg-blue-50/60 dark:focus-visible:bg-blue-950/20 focus-visible:text-blue-700 dark:focus-visible:text-blue-300'
-            }`}
-          >
-            <Building2 className="w-4.5 h-4.5" /> Properties & Customers
-          </button>
-
-          {userRole !== 'Broker' && (
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 py-1 mb-2">Navigation Panels</p>
+            
             <button
-              onClick={() => setActiveTab('sale_entry')}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border ${
-                activeTab === 'sale_entry'
-                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/60 hover:text-blue-800 dark:hover:text-blue-200'
-                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 focus-visible:bg-blue-50/60 dark:focus-visible:bg-blue-950/20 focus-visible:text-blue-700 dark:focus-visible:text-blue-300'
+              onClick={() => setActiveTab('dashboard')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                activeTab === 'dashboard'
+                  ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                  : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
               }`}
             >
-              <Coins className="w-4.5 h-4.5" /> Sale Entry & Calculator
+              <Layers className="w-4.5 h-4.5" /> Dashboard Overview
             </button>
-          )}
 
-          <button
-            onClick={() => setActiveTab('ledger_reports')}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border ${
-              activeTab === 'ledger_reports'
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/60 hover:text-blue-800 dark:hover:text-blue-200'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 focus-visible:bg-blue-50/60 dark:focus-visible:bg-blue-950/20 focus-visible:text-blue-700 dark:focus-visible:text-blue-300'
-            }`}
-          >
-            <ClipboardList className="w-4.5 h-4.5" /> Financial Ledger
-          </button>
-
-          {userRole !== 'Broker' && userRole !== 'Accountant' && (
             <button
-              onClick={() => setActiveTab('audit_logs')}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border ${
-                activeTab === 'audit_logs'
-                  ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70 dark:hover:bg-blue-950/60 hover:text-blue-800 dark:hover:text-blue-200'
-                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50/60 dark:hover:bg-blue-950/20 focus-visible:bg-blue-50/60 dark:focus-visible:bg-blue-950/20 focus-visible:text-blue-700 dark:focus-visible:text-blue-300'
+              onClick={() => setActiveTab('brokers')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                activeTab === 'brokers'
+                  ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                  : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
               }`}
             >
-              <ShieldAlert className="w-4.5 h-4.5" /> Security Audit Logs
+              <Users className="w-4.5 h-4.5" /> Brokers Directory
             </button>
-          )}
 
-          <div className="pt-8 px-4 leading-normal">
-            <div className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/10 flex flex-col gap-2">
-              <Database className="w-4 h-4 text-blue-500" />
+            <button
+              onClick={() => setActiveTab('properties')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                activeTab === 'properties'
+                  ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                  : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
+              }`}
+            >
+              <Building2 className="w-4.5 h-4.5" /> Properties & Customers
+            </button>
+
+            {userRole !== 'Broker' && (
+              <button
+                onClick={() => setActiveTab('sale_entry')}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                  activeTab === 'sale_entry'
+                    ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                    : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
+                }`}
+              >
+                <Coins className="w-4.5 h-4.5" /> Sale Entry & Calculator
+              </button>
+            )}
+
+            <button
+              onClick={() => setActiveTab('ledger_reports')}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                activeTab === 'ledger_reports'
+                  ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                  : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
+              }`}
+            >
+              <ClipboardList className="w-4.5 h-4.5" /> Financial Ledger
+            </button>
+
+            {userRole !== 'Broker' && userRole !== 'Accountant' && (
+              <button
+                onClick={() => setActiveTab('audit_logs')}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                  activeTab === 'audit_logs'
+                    ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                    : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
+                }`}
+              >
+                <ShieldAlert className="w-4.5 h-4.5" /> Security Audit Logs
+              </button>
+            )}
+          </div>
+
+          {/* Status Line at the bottom of the sidebar */}
+          <div className="pt-6 border-t border-white/10 flex flex-col gap-2.5">
+            <div className="flex items-center gap-2 px-1 text-[10px] text-teal-400 font-semibold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse" />
+              <span>System Status: Ready</span>
+            </div>
+            <div className="p-3 rounded-lg bg-white/5 border border-white/5 flex flex-col gap-1">
+              <Database className="w-3.5 h-3.5 text-teal-400" />
               <div>
-                <p className="font-extrabold text-[10px] text-blue-700 dark:text-blue-400 uppercase tracking-wider">Scope Limits</p>
-                <p className="text-[9px] text-slate-400 mt-0.5 leading-relaxed">
-                  As <strong>{userRole}</strong>, you have been granted access to authorized modules according to structural corporate roles.
+                <p className="font-extrabold text-[9px] text-white uppercase tracking-wider">Scope Limits</p>
+                <p className="text-[8.5px] text-slate-300 leading-normal mt-0.5">
+                  Authorized as <strong>{userRole}</strong>. Module access restricted by role controls.
                 </p>
               </div>
             </div>
           </div>
         </nav>
 
-        {/* CONTAINER CONTENT */}
-        <main className="flex-1 p-6 overflow-x-hidden">
+        {/* CONTAINER CONTENT - ALWAYS LIGHT GRAY / WHITE */}
+        <main className="flex-1 p-6 overflow-x-hidden bg-slate-50 text-slate-900">
           {loading ? (
             <div className="h-full flex flex-col items-center justify-center py-20 gap-3 text-slate-400 text-xs">
               <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />

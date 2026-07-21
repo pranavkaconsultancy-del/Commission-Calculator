@@ -66,8 +66,8 @@ export function DashboardView({ brokers, properties, sales, commissions, darkMod
   });
   const areaSalesData = Object.values(areaSalesMap);
 
-  // Colors for Area Pie Chart
-  const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+  // Colors for Area Pie Chart (custom navy/teal palette matching theme)
+  const COLORS = ['#0F1F3D', '#0EA5B7', '#142A4D', '#38BDF8', '#0D9488', '#0284C7'];
 
   // 4. Broker Performance Leaderboard (Ranked Bar Chart)
   const brokerPerformanceMap: Record<string, { name: string; commission: number; sales: number }> = {};
@@ -110,58 +110,50 @@ export function DashboardView({ brokers, properties, sales, commissions, darkMod
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Brokers Card */}
-        <div className={`p-5 rounded-xl border transition-shadow hover:shadow-md flex items-center gap-4 ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <div className="p-3 bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 rounded-lg">
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-blue-50 text-blue-600 border border-blue-100/50 rounded-xl shrink-0">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Brokers</p>
-            <h3 className="text-2xl font-black mt-0.5">{brokers.length}</h3>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{activeBrokers.length} active registered</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Brokers</p>
+            <h3 className="text-3xl font-black text-slate-900 mt-0.5">{brokers.length}</h3>
+            <p className="text-[10px] text-emerald-600 font-semibold">{activeBrokers.length} active registered</p>
           </div>
         </div>
 
         {/* Sales Count Card */}
-        <div className={`p-5 rounded-xl border transition-shadow hover:shadow-md flex items-center gap-4 ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <div className="p-3 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-lg">
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-teal-50 text-teal-600 border border-teal-100/50 rounded-xl shrink-0">
             <ShoppingBag className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Flats Sold</p>
-            <h3 className="text-2xl font-black mt-0.5">{totalFlatsSold}</h3>
-            <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">Out of {properties.length} total units</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Flats Sold</p>
+            <h3 className="text-3xl font-black text-slate-900 mt-0.5">{totalFlatsSold}</h3>
+            <p className="text-[10px] text-blue-600 font-semibold">Out of {properties.length} total units</p>
           </div>
         </div>
 
         {/* Sales Value Card */}
-        <div className={`p-5 rounded-xl border transition-shadow hover:shadow-md flex items-center gap-4 ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <div className="p-3 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-lg">
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-emerald-50 text-emerald-600 border border-emerald-100/50 rounded-xl shrink-0">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Sales Value</p>
-            <h3 className="text-2xl font-black mt-0.5">{formatNumber(totalSalesValue)}</h3>
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Average: {formatCurrency(totalSalesValue / (sales.length || 1))}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sales Value</p>
+            <h3 className="text-3xl font-black text-slate-900 mt-0.5">{formatNumber(totalSalesValue)}</h3>
+            <p className="text-[10px] text-emerald-600 font-semibold font-medium">Avg: {formatCurrency(totalSalesValue / (sales.length || 1))}</p>
           </div>
         </div>
 
         {/* Today's & Monthly Sales Card */}
-        <div className={`p-5 rounded-xl border transition-shadow hover:shadow-md flex items-center gap-4 ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <div className="p-3 bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 rounded-lg">
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-orange-50 text-orange-600 border border-orange-100/50 rounded-xl shrink-0">
             <Building2 className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Monthly Sales</p>
-            <h3 className="text-2xl font-black mt-0.5">{formatNumber(monthlySales)}</h3>
-            <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">Today: {formatCurrency(todaySales)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Monthly Sales</p>
+            <h3 className="text-3xl font-black text-slate-900 mt-0.5">{formatNumber(monthlySales)}</h3>
+            <p className="text-[10px] text-orange-600 font-semibold font-medium">Today: {formatCurrency(todaySales)}</p>
           </div>
         </div>
       </div>
@@ -169,77 +161,85 @@ export function DashboardView({ brokers, properties, sales, commissions, darkMod
       {/* Commission KPIs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Net Commission */}
-        <div className={`p-5 rounded-xl border text-center ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <Coins className="w-7 h-7 mx-auto text-blue-600 dark:text-blue-400 mb-2" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Net Payable Commission</p>
-          <h2 className="text-3xl font-black text-blue-600 dark:text-blue-400 mt-1">{formatCurrency(totalNetComm)}</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Gross Commission: {formatCurrency(totalGrossComm)}</p>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-blue-50 text-blue-600 border border-blue-100/50 rounded-xl shrink-0">
+            <Coins className="w-7 h-7" />
+          </div>
+          <div className="text-left">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Net Payable Commission</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-blue-600 mt-0.5">{formatCurrency(totalNetComm)}</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5">Gross Commission: {formatCurrency(totalGrossComm)}</p>
+          </div>
         </div>
 
         {/* Paid Commission */}
-        <div className={`p-5 rounded-xl border text-center ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <CheckCircle className="w-7 h-7 mx-auto text-emerald-600 dark:text-emerald-400 mb-2" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Paid Payouts</p>
-          <h2 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{formatCurrency(paidComm)}</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Cleared using Bank/UPI transfer</p>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-emerald-50 text-emerald-600 border border-emerald-100/50 rounded-xl shrink-0">
+            <CheckCircle className="w-7 h-7" />
+          </div>
+          <div className="text-left">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paid Payouts</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-emerald-600 mt-0.5">{formatCurrency(paidComm)}</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5">Cleared using Bank/UPI transfer</p>
+          </div>
         </div>
 
         {/* Pending Commission */}
-        <div className={`p-5 rounded-xl border text-center ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <AlertCircle className="w-7 h-7 mx-auto text-amber-600 dark:text-amber-400 mb-2" />
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Pending Balances</p>
-          <h2 className="text-3xl font-black text-amber-600 dark:text-amber-400 mt-1">{formatCurrency(pendingComm)}</h2>
-          <p className="text-[10px] text-slate-400 mt-1">Awaiting bank authorizations</p>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
+          <div className="p-3.5 bg-amber-50 text-amber-600 border border-amber-100/50 rounded-xl shrink-0">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <div className="text-left">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending Balances</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-amber-600 mt-0.5">{formatCurrency(pendingComm)}</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5">Awaiting bank authorizations</p>
+          </div>
         </div>
       </div>
 
       {/* Visual Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Sales Area Chart */}
-        <div className={`p-5 rounded-xl border ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 text-slate-400">Project-wise Revenue Distribution</h3>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Project-wise Revenue Distribution</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Gross revenue share of individual real estate projects</p>
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={projectSalesData}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0EA5B7" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#0EA5B7" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#334155' : '#E2E8F0'} />
-                <XAxis dataKey="name" stroke={darkMode ? '#94A3B8' : '#64748B'} fontSize={10} />
-                <YAxis stroke={darkMode ? '#94A3B8' : '#64748B'} fontSize={10} tickFormatter={(v) => `₹${v/100000}L`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="name" stroke="#64748B" fontSize={10} />
+                <YAxis stroke="#64748B" fontSize={10} tickFormatter={(v) => `₹${v/100000}L`} />
                 <Tooltip formatter={(value: any) => [formatCurrency(Number(value)), 'Sales Revenue']} />
-                <Area type="monotone" dataKey="sales" stroke="#2563EB" fillOpacity={1} fill="url(#colorSales)" />
+                <Area type="monotone" dataKey="sales" stroke="#0EA5B7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Broker Leaderboard (Ranked Bar Chart) */}
-        <div className={`p-5 rounded-xl border ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 text-slate-400">Broker Sales Performance Leaderboard</h3>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Broker Sales Performance Leaderboard</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Ranked sales value achievement of top registering brokers</p>
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={brokerLeaderboardData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#334155' : '#E2E8F0'} />
-                <XAxis type="number" stroke={darkMode ? '#94A3B8' : '#64748B'} fontSize={10} tickFormatter={(v) => `₹${v/100000}L`} />
-                <YAxis type="category" dataKey="name" stroke={darkMode ? '#94A3B8' : '#64748B'} fontSize={9} width={80} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis type="number" stroke="#64748B" fontSize={10} tickFormatter={(v) => `₹${v/100000}L`} />
+                <YAxis type="category" dataKey="name" stroke="#64748B" fontSize={9} width={80} />
                 <Tooltip formatter={(value: any) => [formatCurrency(Number(value)), 'Sales Booked']} />
-                <Bar dataKey="sales" fill="#10B981" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="sales" fill="#0EA5B7" radius={[0, 4, 4, 0]}>
                   {brokerLeaderboardData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#0EA5B7' : '#0F1F3D'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -248,30 +248,42 @@ export function DashboardView({ brokers, properties, sales, commissions, darkMod
         </div>
 
         {/* Monthly Trend Area Chart */}
-        <div className={`p-5 rounded-xl border ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 text-slate-400">6-Month Revenue & Payout Trend</h3>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">6-Month Revenue & Payout Trend</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Comparison chart between sales revenue and commission payouts</p>
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#334155' : '#E2E8F0'} />
-                <XAxis dataKey="month" stroke={darkMode ? '#94A3B8' : '#64748B'} fontSize={10} />
-                <YAxis stroke={darkMode ? '#94A3B8' : '#64748B'} fontSize={10} tickFormatter={(v) => `₹${v/100000}L`} />
+              <AreaChart data={monthlyTrendData}>
+                <defs>
+                  <linearGradient id="colorTrendSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0EA5B7" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#0EA5B7" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorTrendComm" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0F1F3D" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#0F1F3D" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="month" stroke="#64748B" fontSize={10} />
+                <YAxis stroke="#64748B" fontSize={10} tickFormatter={(v) => `₹${v/100000}L`} />
                 <Tooltip formatter={(value: any) => [formatCurrency(Number(value)), '']} />
                 <Legend />
-                <Line type="monotone" dataKey="sales" name="Sales Revenue" stroke="#3B82F6" strokeWidth={2.5} activeDot={{ r: 8 }} />
-                <Line type="monotone" dataKey="commission" name="Commission Payout" stroke="#EC4899" strokeWidth={2} />
-              </LineChart>
+                <Area type="monotone" dataKey="sales" name="Sales Revenue" stroke="#0EA5B7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTrendSales)" />
+                <Area type="monotone" dataKey="commission" name="Commission Payout" stroke="#0F1F3D" strokeWidth={2} fillOpacity={1} fill="url(#colorTrendComm)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Area-wise distribution Pie Chart */}
-        <div className={`p-5 rounded-xl border ${
-          darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
-        }`}>
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 text-slate-400">Sales Value Share by City Zone</h3>
+        <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Sales Value Share by City Zone</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Geographical breakdown of transaction value share</p>
+          </div>
           <div className="h-64 flex flex-col sm:flex-row items-center justify-around">
             {areaSalesData.length === 0 ? (
               <div className="text-xs text-slate-400">No Sales Recorded Yet</div>
@@ -302,7 +314,7 @@ export function DashboardView({ brokers, properties, sales, commissions, darkMod
                     <div key={entry.name} className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                       <div className="text-xs">
-                        <span className="font-semibold">{entry.name}:</span>{' '}
+                        <span className="font-semibold text-slate-800">{entry.name}:</span>{' '}
                         <span className="text-slate-500">{formatNumber(entry.value)}</span>
                       </div>
                     </div>
