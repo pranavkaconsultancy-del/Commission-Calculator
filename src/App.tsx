@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, Users, Coins, ClipboardList, ShieldAlert, Sun, Moon, Bell, Info, 
-  Database, RefreshCw, LogIn, UserCheck, Layers, Search
+  Database, RefreshCw, LogIn, UserCheck, Layers, Search, MessageSquare
 } from 'lucide-react';
 import { 
   Broker, Project, Property, Sale, Commission, Payment, AuditLog, AppNotification, UserRole 
@@ -16,6 +16,7 @@ import { SaleEntryView } from './components/SaleEntryView';
 import { HistoryReportsView } from './components/HistoryReportsView';
 import { AuditLogsView } from './components/AuditLogsView';
 import { NotificationsPanel } from './components/NotificationsPanel';
+import { ChatbotPanel } from './components/ChatbotPanel';
 
 export default function App() {
   // 1. Theme and UI State
@@ -25,6 +26,7 @@ export default function App() {
 
   // Active Screen Navigation
   const [activeTab, setActiveTab] = useState<'dashboard' | 'brokers' | 'properties' | 'sale_entry' | 'ledger_reports' | 'audit_logs'>('dashboard');
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
 
   // Role-Based Auth Simulation (Dropdown Selector)
   const [userRole, setUserRole] = useState<UserRole>('Super Admin');
@@ -469,6 +471,18 @@ export default function App() {
                 <ShieldAlert className="w-4.5 h-4.5" /> Security Audit Logs
               </button>
             )}
+
+            <button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                isChatOpen
+                  ? 'bg-teal-500 text-slate-900 border-transparent shadow-md'
+                  : 'border-transparent text-teal-400 hover:text-white hover:bg-teal-500/10'
+              }`}
+              id="sidebar-chat-toggle-button"
+            >
+              <MessageSquare className="w-4.5 h-4.5" /> Interactive AI Chatbot
+            </button>
           </div>
 
           {/* Status Line at the bottom of the sidebar */}
@@ -593,6 +607,18 @@ export default function App() {
       }`}>
         Broker Commission Management System © {new Date().getFullYear()} SyncAI Consultancy Pvt. Ltd. Authorized operators only.
       </footer>
+
+      {/* AI CHATBOT PANEL */}
+      <ChatbotPanel
+        brokers={brokers}
+        projects={projects}
+        properties={properties}
+        sales={sales}
+        commissions={commissions}
+        payments={payments}
+        isOpen={isChatOpen}
+        onToggle={setIsChatOpen}
+      />
     </div>
   );
 }
