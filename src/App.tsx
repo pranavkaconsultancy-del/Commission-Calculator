@@ -9,7 +9,6 @@ import {
 import { db, isSupabaseConfigured } from './supabaseClient';
 
 // Import Modular Components
-import { BrandLogo } from './components/BrandLogo';
 import { DashboardView } from './components/DashboardView';
 import { BrokersView } from './components/BrokersView';
 import { PropertiesView } from './components/PropertiesView';
@@ -392,27 +391,11 @@ export default function App() {
         <nav className="w-full md:w-64 p-4 md:min-h-screen text-xs flex flex-col justify-between bg-[#0F1F3D] text-white border-r border-[#1e3256] space-y-1.5 shrink-0">
           
           <div className="space-y-1.5 w-full">
-            {/* App logo/branding at top of the sidebar */}
-            <div className="px-3.5 py-4 flex flex-col gap-2 border-b border-white/10 mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="bg-white/10 p-1.5 rounded-xl border border-white/10 shrink-0">
-                  <BrandLogo className="h-8 w-auto" darkMode={true} showText={false} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black tracking-tight text-white uppercase flex items-center gap-1">
-                    SyncAI
-                  </h2>
-                  <p className="text-[9px] font-black text-teal-400 uppercase tracking-widest">Commission Portal</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ${
-                  isSupabaseConfigured ? 'bg-teal-500/20 text-teal-300' : 'bg-amber-500/20 text-amber-300'
-                }`}>
-                  {isSupabaseConfigured ? 'Cloud Sync' : 'Local Fallback'}
-                </span>
-                <span className="text-[8px] text-white/50 font-bold">v1.2.0</span>
-              </div>
+            {/* App branding at top of the sidebar */}
+            <div className="px-3.5 py-5 border-b border-white/10 mb-5">
+              <h1 className="text-base font-bold text-white tracking-tight" id="app-branding-title">
+                SyncAI Consultancy Pvt. Ltd.
+              </h1>
             </div>
 
             <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 py-1 mb-2">Navigation Panels</p>
