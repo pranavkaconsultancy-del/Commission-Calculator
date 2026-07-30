@@ -111,7 +111,7 @@ export interface AuditLog {
 
 export interface AppNotification {
   id: string;
-  type: 'Payment Due' | 'New Sale' | 'Payment Completed' | 'Broker Added';
+  type: 'Payment Due' | 'New Sale' | 'Payment Completed' | 'Broker Added' | 'Excel Import';
   title: string;
   message: string;
   is_read: boolean;

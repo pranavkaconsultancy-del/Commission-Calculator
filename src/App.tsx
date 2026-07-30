@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, Users, Coins, ClipboardList, ShieldAlert, Sun, Moon, Bell, Info, 
-  Database, RefreshCw, LogIn, UserCheck, Layers, Search, MessageSquare
+  Database, RefreshCw, LogIn, UserCheck, Layers, Search, MessageSquare, FileSpreadsheet
 } from 'lucide-react';
 import { 
   Broker, Project, Property, Sale, Commission, Payment, AuditLog, AppNotification, UserRole 
@@ -25,7 +25,7 @@ export default function App() {
   });
 
   // Active Screen Navigation
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'brokers' | 'properties' | 'sale_entry' | 'ledger_reports' | 'audit_logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'brokers' | 'properties' | 'sale_entry' | 'excel_import' | 'ledger_reports' | 'audit_logs'>('dashboard');
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
 
   // Role-Based Auth Simulation (Dropdown Selector)
@@ -245,6 +245,22 @@ export default function App() {
     await loadAllData(true);
   };
 
+  // BATCH EXCEL IMPORT SUCCESS
+  const handleImportSuccess = async () => {
+    await db.logAction(
+      userEmail,
+      userRole,
+      'EXCEL_IMPORT',
+      `Batch imported commission entries from Excel spreadsheet.`
+    );
+    await db.saveNotification({
+      type: 'Excel Import',
+      title: 'Excel Data Imported',
+      message: `Successfully processed and imported bulk commission entries into database.`
+    });
+    await loadAllData(true);
+  };
+
   // DISBURSE PARTIAL OR FULL PAYMENT
   const handleAddPayment = async (payment: Payment, updatedCommission: Commission) => {
     // Save payment (automatically recalculates pending balance & updates commission record inside savePayment helper)
@@ -436,16 +452,29 @@ export default function App() {
             </button>
 
             {userRole !== 'Broker' && (
-              <button
-                onClick={() => setActiveTab('sale_entry')}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
-                  activeTab === 'sale_entry'
-                    ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
-                    : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
-                }`}
-              >
-                <Coins className="w-4.5 h-4.5" /> Sale Entry & Calculator
-              </button>
+              <>
+                <button
+                  onClick={() => setActiveTab('sale_entry')}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                    activeTab === 'sale_entry'
+                      ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                      : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
+                  }`}
+                >
+                  <Coins className="w-4.5 h-4.5" /> Sale Entry & Calculator
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('excel_import')}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold transition-all border outline-none focus-visible:ring-2 focus-visible:ring-teal-400 ${
+                    activeTab === 'excel_import'
+                      ? 'bg-[#1b325f] text-white shadow-md border-l-4 border-l-teal-400 border-t-transparent border-b-transparent border-r-transparent rounded-r-xl rounded-l-none'
+                      : 'border-transparent text-slate-300 hover:text-white hover:bg-[#1b325f]/50'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4.5 h-4.5 text-teal-400" /> Excel Import
+                </button>
+              </>
             )}
 
             <button
@@ -534,6 +563,8 @@ export default function App() {
                   sales={sales}
                   commissions={commissions}
                   darkMode={darkMode}
+                  onNavigateToImport={() => setActiveTab('excel_import')}
+                  onNavigateToSaleEntry={() => setActiveTab('sale_entry')}
                 />
               )}
 
@@ -564,14 +595,16 @@ export default function App() {
                 />
               )}
 
-              {activeTab === 'sale_entry' && (
+              {(activeTab === 'sale_entry' || activeTab === 'excel_import') && (
                 <SaleEntryView 
                   brokers={brokers}
                   projects={projects}
                   properties={properties}
                   onAddSale={handleAddSale}
+                  onImportSuccess={handleImportSuccess}
                   userRole={userRole}
                   darkMode={darkMode}
+                  initialMode={activeTab === 'excel_import' ? 'excel' : 'manual'}
                 />
               )}
 

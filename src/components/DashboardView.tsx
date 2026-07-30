@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  TrendingUp, Coins, CheckCircle, AlertCircle, Building2, Users, ShoppingBag, DollarSign
+  TrendingUp, Coins, CheckCircle, AlertCircle, Building2, Users, ShoppingBag, DollarSign, FileSpreadsheet, Plus
 } from 'lucide-react';
 import { 
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
@@ -15,9 +15,13 @@ interface DashboardProps {
   sales: Sale[];
   commissions: Commission[];
   darkMode: boolean;
+  onNavigateToImport?: () => void;
+  onNavigateToSaleEntry?: () => void;
 }
 
-export function DashboardView({ brokers, properties, sales, commissions, darkMode }: DashboardProps) {
+export function DashboardView({ 
+  brokers, properties, sales, commissions, darkMode, onNavigateToImport, onNavigateToSaleEntry 
+}: DashboardProps) {
   // 1. Calculations
   const activeBrokers = brokers.filter(b => b.status === 'Active');
   const totalFlatsSold = properties.filter(p => p.status === 'Sold').length;
@@ -107,6 +111,40 @@ export function DashboardView({ brokers, properties, sales, commissions, darkMod
 
   return (
     <div className="space-y-6">
+      {/* QUICK ACTIONS BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div>
+          <h2 className="text-base font-black tracking-tight text-slate-900 dark:text-white">
+            Commission Executive Dashboard
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Real-time sales tracking, auto-calculated payouts, and spreadsheet integration.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {onNavigateToImport && (
+            <button
+              onClick={onNavigateToImport}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs bg-teal-600 text-white hover:bg-teal-700 transition-all shadow-md shadow-teal-600/20 active:scale-95"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Import from Excel
+            </button>
+          )}
+
+          {onNavigateToSaleEntry && (
+            <button
+              onClick={onNavigateToSaleEntry}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold text-xs bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              + Add Entry
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Brokers Card */}

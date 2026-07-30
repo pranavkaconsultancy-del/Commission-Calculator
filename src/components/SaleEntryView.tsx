@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Plus, DollarSign, Calendar, User, Phone, CheckCircle, AlertCircle, Info, Coins
+  Building2, Plus, DollarSign, Calendar, User, Phone, CheckCircle, AlertCircle, Info, Coins, FileSpreadsheet
 } from 'lucide-react';
 import { Broker, Project, Property, Sale, Commission } from '../types';
 import { formatCurrency, formatNumber } from '../utils';
+import { ExcelImportView } from './ExcelImportView';
 
 interface SaleEntryViewProps {
   brokers: Broker[];
   projects: Project[];
   properties: Property[];
   onAddSale: (sale: Sale, commission: Commission) => Promise<void>;
+  onImportSuccess: () => Promise<void>;
   userRole: string;
   darkMode: boolean;
+  initialMode?: 'manual' | 'excel';
 }
 
 export function SaleEntryView({ 
-  brokers, projects, properties, onAddSale, userRole, darkMode 
+  brokers, projects, properties, onAddSale, onImportSuccess, userRole, darkMode, initialMode = 'manual'
 }: SaleEntryViewProps) {
+  // Mode State: 'manual' or 'excel'
+  const [entryMode, setEntryMode] = useState<'manual' | 'excel'>(initialMode);
+
   // Form State
   const [selectedBrokerId, setSelectedBrokerId] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -187,7 +193,50 @@ export function SaleEntryView({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <div className="space-y-6">
+      {/* ENTRY MODE SWITCHER TABS */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <button
+            onClick={() => setEntryMode('manual')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all ${
+              entryMode === 'manual'
+                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Coins className="w-4 h-4" />
+            + Manual Commission Entry
+          </button>
+
+          <button
+            onClick={() => setEntryMode('excel')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all ${
+              entryMode === 'excel'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Import from Excel (.xlsx / .csv)
+          </button>
+        </div>
+
+        <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 px-3 hidden md:block">
+          {entryMode === 'manual' ? 'Manual single-entry calculator mode' : 'Bulk spreadsheet import engine with validation'}
+        </div>
+      </div>
+
+      {entryMode === 'excel' ? (
+        <ExcelImportView 
+          brokers={brokers}
+          projects={projects}
+          onImportSuccess={onImportSuccess}
+          onCancel={() => setEntryMode('manual')}
+          darkMode={darkMode}
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Sale Form (left 3 cols) */}
       <div className={`lg:col-span-3 p-6 rounded-xl border flex flex-col gap-5 ${
         darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
@@ -447,5 +496,7 @@ export function SaleEntryView({
         )}
       </div>
     </div>
+  )}
+</div>
   );
 }
